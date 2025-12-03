@@ -44,9 +44,8 @@ class Tiers extends Model
     public function getFullAddressAttribute(): string
     {
         return collect([
-            $this->address_line1,
-            $this->address_line2,
-            $this->zip_code . ' ' . $this->city
+            $this->address,
+            $this->code_postal . ' ' . $this->ville
         ])->filter()->join(', ');
     }
 }
