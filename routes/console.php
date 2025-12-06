@@ -11,3 +11,7 @@ Schedule::command('chantiers:check-delay')
 Schedule::command('inventory:check-alert')
     ->dailyAt('08:00')
     ->description("Vérifie les stocks inférieurs au seuil d'alerte");
+
+Schedule::command('bank:sync')
+    ->twiceDaily(6,13)
+    ->description("Synchronise les comptes bancaires BridgeAPI");
