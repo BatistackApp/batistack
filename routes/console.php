@@ -24,3 +24,7 @@ Schedule::command("rh:check-timesheets")
 Schedule::command('expenses:remind')
     ->monthlyOn(25, '10:00')
     ->description("Rappel aux employés de soumettre leurs notes de frais");
+
+Schedule::command('ged:check-expirations')
+    ->dailyAt('08:00')
+    ->description("Vérifie les documents qui expirent bientôt (Assurances, Contrats)");
