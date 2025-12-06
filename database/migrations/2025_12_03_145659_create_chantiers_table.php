@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->string('reference');
             $table->string('name');
             $table->string('status')->default('draft')->index();
+            $table->decimal('total_labor_cost', 12, 2)->default(0);
             $table->boolean('is_overdue')->default(false)->index();
             $table->string('address')->nullable();
             $table->string('code_postal')->nullable();

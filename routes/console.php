@@ -15,3 +15,8 @@ Schedule::command('inventory:check-alert')
 Schedule::command('bank:sync')
     ->twiceDaily(6,13)
     ->description("Synchronise les comptes bancaires BridgeAPI");
+
+Schedule::command("rh:check-timesheets")
+    ->weekdays()
+    ->at('09:00')
+    ->description("Vérifie les pointages manquants de la veille");
