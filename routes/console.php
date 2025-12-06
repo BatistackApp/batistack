@@ -20,3 +20,7 @@ Schedule::command("rh:check-timesheets")
     ->weekdays()
     ->at('09:00')
     ->description("Vérifie les pointages manquants de la veille");
+
+Schedule::command('expenses:remind')
+    ->monthlyOn(25, '10:00')
+    ->description("Rappel aux employés de soumettre leurs notes de frais");
