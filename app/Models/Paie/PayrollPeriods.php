@@ -3,19 +3,18 @@
 namespace App\Models\Paie;
 
 use App\Models\Core\Company;
+use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PayrollPeriods extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToCompany;
 
-    public function company()
-    {
-        return $this->belongsTo(Company::class);
-    }
+    protected $guarded = [];
 
-    protected function casts()
+
+    protected function casts(): array
     {
         return [
             'start_date' => 'date',
