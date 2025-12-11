@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->decimal('cost', 10 ,2)->default(0);
             $table->string('invoice_ref')->nullable();
 
+            $table->string('current_mileage')->nullable();
             $table->string('next_mileage')->nullable();
             $table->date('next_date')->nullable();
 

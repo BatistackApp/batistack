@@ -5,6 +5,7 @@ namespace App\Models\RH;
 use App\Enums\RH\TimesheetType;
 use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
+use App\Models\Fleets\Fleet;
 use App\Observers\RH\TimesheetObserver;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -29,6 +30,12 @@ class Timesheet extends Model
         return $this->belongsTo(Chantiers::class);
     }
 
+    public function fleet(): BelongsTo
+    {
+        return $this->belongsTo(Fleet::class);
+    }
+
+
     protected function casts(): array
     {
         return [
@@ -37,6 +44,8 @@ class Timesheet extends Model
             'hours' => 'decimal:2',
             'lunch_basket' => 'boolean',
             'is_validated' => 'boolean',
+            'end_mileage' => 'integer',
+            'hours_read' => 'decimal:2',
         ];
     }
 
