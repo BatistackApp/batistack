@@ -10,6 +10,7 @@ return new class extends Migration {
     {
         Schema::create('maintenances', function (Blueprint $table) {
             $table->id();
+            $table->foreignIdFor(\App\Models\Core\Company::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Fleet::class)->constrained()->cascadeOnDelete();
             $table->date('maintenance_date');
             $table->string('type');

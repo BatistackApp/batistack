@@ -31,6 +31,7 @@ return new class extends Migration {
 
             $table->string('ulys_badge_id')->nullable();
             $table->string('ulys_badge_number')->nullable();
+            $table->decimal('odometer_km', 10, 2)->default(0);
 
             $table->timestamps();
 
