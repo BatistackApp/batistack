@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Paie;
 
 use App\Enums\Paie\PayrollVariableType;
 use App\Models\NoteFrais\Expense;

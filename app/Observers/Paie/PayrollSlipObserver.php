@@ -4,7 +4,7 @@ namespace App\Observers\Paie;
 
 use App\Jobs\Paie\CalculatePayrollSlipJob;
 use App\Models\Paie\PayrollSlip;
-use App\Services\PayrollCalculator;
+use App\Services\Paie\PayrollCalculator;
 
 class PayrollSlipObserver
 {
