@@ -15,6 +15,14 @@ return new class extends Migration {
             $table->foreignIdFor(Company::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Employee::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Chantiers::class)->nullable()->constrained()->cascadeOnDelete();
+
+            $table->foreignId('fleet_id')->nullable()->constrained('fleets')->nullOnDelete();
+            // Pour les véhicules : Kilométrage de fin de journée
+            $table->integer('end_mileage')->nullable();
+            // Pour les engins : Lecture du compteur d'heures
+            $table->decimal('hours_read', 10, 2)->nullable();
+
+
             $table->date('date');
             $table->string('type')->default('work');
             $table->decimal('hours', 4, 2);

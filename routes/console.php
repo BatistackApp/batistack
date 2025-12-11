@@ -34,3 +34,17 @@ Schedule::command('payroll:create-period')
     ->onOneServer()
     ->withoutOverlapping()
     ->sendOutputTo(storage_path('logs/schedule/payroll-create-period.log'));
+
+Schedule::command('fleet:check-expirations')
+    ->dailyAt('08:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/fleet-check-expirations.log'))
+    ->description("Vérifie les dates d'expiration des assurances de flotte et envoie des alertes.");
+
+Schedule::command("fleet:sync-ulys-consumptions")
+    ->daily()
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/sync-ulys-consumptions.log'))
+    ->description("Synchronise les consommations de télépéage Ulys pour les flottes configurées.");

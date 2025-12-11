@@ -38,6 +38,25 @@ class TimesheetObserver
         if ($timesheet->wasChanged('project_id')) {
             $this->updateChantiersLaborCost($timesheet->getOriginal('chantiers_id'));
         }
+
+        // --- NOUVEAU : Mise à jour du Kilométrage/Compteur d'heures de la Flotte ---
+        if ($timesheet->fleet_id) {
+            $fleet = $timesheet->fleet;
+
+            // Si un kilométrage de fin est fourni et qu'il est supérieur à la valeur actuelle de l'actif
+            if ($timesheet->end_mileage !== null && $timesheet->end_mileage > $fleet->mileage) {
+                $fleet->updateQuietly([
+                    'mileage' => $timesheet->end_mileage,
+                ]);
+            }
+
+            // Si une lecture d'heures est fournie et qu'elle est supérieure à la valeur actuelle de l'actif
+            if ($timesheet->hours_read !== null && $timesheet->hours_read > $fleet->hours_meter) {
+                $fleet->updateQuietly([
+                    'hours_meter' => $timesheet->hours_read,
+                ]);
+            }
+        }
     }
 
     public function deleted(Timesheet $timesheet): void
@@ -60,7 +79,7 @@ class TimesheetObserver
         $totalCost = DB::table('timesheets')
             ->join('employees', 'timesheets.employee_id', '=', 'employees.id')
             ->where('timesheets.chantiers_id', $chantiersId)
-            ->where('timesheets.type', TimesheetType::Work) // On ne compte que le travail effectif (pas les trajets/absences)
+            ->where('timesheets.type', TimesheetType::Work->value) // On ne compte que le travail effectif (pas les trajets/absences)
             ->sum(DB::raw('timesheets.hours * employees.hourly_cost'));
 
         // Mise à jour silencieuse (pour ne pas déclencher l'observer Project)
