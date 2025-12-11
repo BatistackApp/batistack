@@ -3,7 +3,7 @@
 namespace App\Jobs\Paie;
 
 use App\Models\Paie\PayrollSlip;
-use App\Services\PayrollCalculator;
+use App\Services\Paie\PayrollCalculator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
