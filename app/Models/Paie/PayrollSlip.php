@@ -3,11 +3,14 @@
 namespace App\Models\Paie;
 
 use App\Models\RH\Employee;
+use App\Observers\Paie\PayrollSlipObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy([PayrollSlipObserver::class])]
 class PayrollSlip extends Model
 {
     use HasFactory;
@@ -25,7 +28,7 @@ class PayrollSlip extends Model
 
     public function variables(): HasMany
     {
-
+        return $this->hasMany(PayrollVariable::class);
     }
 
     protected function casts(): array

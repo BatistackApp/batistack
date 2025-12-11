@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PayrollVariable extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     public function slip(): BelongsTo
     {

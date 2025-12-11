@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->string('unit')->default('h'); // h, u, €
             // Optionnel : Valeur unitaire si connue (ex: montant du panier repas)
             $table->decimal('unit_value', 10, 2)->nullable();
+            $table->string('source')->nullable();
+            $table->morphs('sourceable');
             $table->timestamps();
         });
     }

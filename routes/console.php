@@ -28,3 +28,9 @@ Schedule::command('expenses:remind')
 Schedule::command('ged:check-expirations')
     ->dailyAt('08:00')
     ->description("Vérifie les documents qui expirent bientôt (Assurances, Contrats)");
+
+Schedule::command('payroll:create-period')
+    ->monthlyOn(1, '00:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/payroll-create-period.log'));
