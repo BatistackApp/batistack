@@ -28,7 +28,13 @@ return new class extends Migration {
 
             $table->integer('kilometrage')->default(0);
             $table->date('last_check_date')->nullable();
+
+            $table->string('ulys_badge_id')->nullable();
+            $table->string('ulys_badge_number')->nullable();
+
             $table->timestamps();
+
+            $table->unique(['ulys_badge_id', 'ulys_badge_number']);
         });
     }
 
