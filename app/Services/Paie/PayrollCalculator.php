@@ -3,6 +3,7 @@
 namespace App\Services\Paie;
 
 use App\Enums\Paie\PayrollVariableType;
+use App\Enums\RH\TimesheetType;
 use App\Models\NoteFrais\Expense;
 use App\Models\Paie\PayrollSlip;
 use App\Models\RH\Timesheet;
@@ -23,11 +24,9 @@ class PayrollCalculator
         $employeeId = $slip->employee_id;
 
         // --- 2. Intégration du Module POINTAGE / Timesheets ---
-        // Le but est d'agréger toutes les heures de l'employé pour la période.
         $this->processTimesheets($slip, $startDate, $endDate, $employeeId, $totalHours);
 
         // --- 3. Intégration du Module NOTES DE FRAIS ---
-        // Le but est de créer une variable pour chaque note de frais validée et à rembourser.
         $this->processExpenses($slip, $startDate, $endDate, $employeeId, $totalExpensesAmount);
 
         // --- 4. Mise à jour des totaux sur le bulletin ---
@@ -35,8 +34,6 @@ class PayrollCalculator
             'total_hours' => $totalHours,
             'total_expenses_amount' => $totalExpensesAmount,
         ]);
-
-        // Optionnel : Créer une notification pour l'employé si le bulletin est "validé" (is_validated)
     }
 
     /**
@@ -44,39 +41,25 @@ class PayrollCalculator
      */
     protected function processTimesheets(PayrollSlip $slip, $startDate, $endDate, $employeeId, &$totalHours): void
     {
-        // ⚠️ NOTE TECHNIQUE : Le modèle Timesheet n'a pas été fourni. Nous utilisons un placeholder.
-        // La requête réelle dépendra de la structure de votre table Timesheets (pointage).
         $timesheets = Timesheet::where('employee_id', $employeeId)
             ->whereBetween('date', [$startDate, $endDate])
+            ->select('type', DB::raw('SUM(hours) as total_hours'))
+            ->groupBy('type')
             ->get();
 
-        // Simuler l'agrégation des heures par type
-        $aggregatedHours = [
-            PayrollVariableType::StandardHour->value => 0,
-            PayrollVariableType::Overtime25->value => 0,
-            // ... autres types d'heures
-        ];
-
         foreach ($timesheets as $ts) {
-            // Ici, une logique complexe de calcul des heures sup est généralement nécessaire,
-            // basée sur le contrat de l'employé et les règles légales.
-            // Pour l'exemple, nous allons juste ajouter les heures normales.
-            $aggregatedHours[PayrollVariableType::StandardHour->value] += $ts->hours_worked; // Exemple
-        }
+            $payrollType = $this->mapTimesheetTypeToPayrollVariable($ts->type);
 
-        // Création des variables de paie pour les heures
-        foreach ($aggregatedHours as $typeValue => $quantity) {
-            if ($quantity > 0) {
-                $type = PayrollVariableType::from($typeValue);
+            if ($payrollType) {
                 $slip->variables()->create([
-                    'type' => $type,
-                    'code' => $this->getPayrollCode($type), // Fonction à implémenter pour les codes export
-                    'label' => $type->getLabel(),
-                    'quantity' => $quantity,
+                    'type' => $payrollType,
+                    'code' => $this->getPayrollCode($payrollType),
+                    'label' => $payrollType->getLabel(),
+                    'quantity' => $ts->total_hours,
                     'unit' => 'h',
                     'source' => 'Pointage',
                 ]);
-                $totalHours += $quantity;
+                $totalHours += $ts->total_hours;
             }
         }
     }
@@ -104,7 +87,6 @@ class PayrollCalculator
                 'quantity' => $amount,
                 'unit' => '€',
                 'source' => 'NotesDeFrais',
-                // Utilisation de la relation Polymorphique pour la traçabilité
                 'sourceable_type' => Expense::class,
                 'sourceable_id' => $expense->id,
             ]);
@@ -116,8 +98,19 @@ class PayrollCalculator
     }
 
     /**
+     * Fait la correspondance entre le type d'heure du pointage et la variable de paie.
+     */
+    protected function mapTimesheetTypeToPayrollVariable(TimesheetType $type): ?PayrollVariableType
+    {
+        return match ($type) {
+            TimesheetType::Work, TimesheetType::Travel => PayrollVariableType::StandardHour,
+            TimesheetType::Absence => PayrollVariableType::Absence,
+            default => null, // On ignore les autres types comme 'Training' pour l'instant
+        };
+    }
+
+    /**
      * Renvoie le code d'export de paie (ex: HN, HS25) basé sur le type.
-     * Cette fonction devra être adaptée selon le logiciel de paie cible (Silae, Sage, etc.).
      */
     protected function getPayrollCode(PayrollVariableType $type): string
     {
