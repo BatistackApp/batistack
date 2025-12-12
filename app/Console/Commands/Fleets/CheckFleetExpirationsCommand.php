@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Fleets;
 
+use App\Enums\UserRole;
 use App\Models\Fleets\Insurance;
 use App\Models\User;
 use App\Notifications\Fleets\InsuranceExpiringNotification;
@@ -20,26 +21,29 @@ class CheckFleetExpirationsCommand extends Command
         $startDate = Carbon::now()->startOfDay();
         $alertDate = Carbon::now()->addDays(30)->endOfDay();
 
-        // Trouver tous les contrats dont la date de fin est entre aujourd'hui et dans 30 jours
+        // 1. Trouver les contrats expirant bientôt et n'ayant pas déjà été notifiés
         $expiringInsurances = Insurance::whereBetween('end_date', [$startDate, $alertDate])
-            ->where('is_expired', false) // Ajoutez un flag pour ne pas spammer après l'expiration
+            ->whereNull('notified_at') // On ne notifie qu'une seule fois
+            ->where('is_active', true)
             ->with('fleet')
             ->get();
 
         if ($expiringInsurances->isEmpty()) {
-            $this->info('No insurance contracts are expiring in the next 30 days.');
+            $this->info('No new insurance contracts to notify for expiration.');
+            return;
         }
 
         $this->info("Found {$expiringInsurances->count()} insurance contracts expiring soon...");
 
-        $notifiableUsers = User::where('role', 'admin')
-            ->orWhere('role', 'comptabilite')
-            ->get();
+        // 2. Trouver les utilisateurs à notifier (Gestionnaires de flotte ou Admins)
+        $notifiableUsers = User::where('role', UserRole::ADMINISTRATEUR)->get(); // Adapter selon vos rôles
 
         if ($notifiableUsers->isEmpty()) {
-            $this->warn('No users found with the fleet_manager role to send notifications to.');
+            $this->warn('No users found with the required role to send notifications to.');
+            return;
         }
 
+        // 3. Envoyer les notifications et marquer comme notifié
         foreach ($expiringInsurances as $insurance) {
             $daysRemaining = $startDate->diffInDays($insurance->end_date, false);
 
@@ -48,11 +52,10 @@ class CheckFleetExpirationsCommand extends Command
             // Envoi de la notification
             Notification::send($notifiableUsers, new InsuranceExpiringNotification($insurance, $daysRemaining));
 
-            // Si la date d'expiration est dépassée (daysRemaining <= 0), vous pouvez marquer le contrat
-            // comme 'is_expired' => true pour stopper les alertes récurrentes.
+            // Marquer comme notifié pour éviter les spams
+            $insurance->update(['notified_at' => now()]);
         }
 
         $this->info('Expiration check completed.');
-
     }
 }
