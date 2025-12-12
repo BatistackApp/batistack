@@ -21,9 +21,18 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
 
 ### Modules en Cours de Développement
 
-- **Comptabilité** : Finalisation des journaux comptables (achats, ventes, banque), du Grand Livre et des exports (FEC).
-- **Paie** : Calcul des fiches de paie et préparation des exports pour les logiciels spécialisés (Silae, Sage).
-- **Flottes** : Gestion des véhicules, engins, assurances et maintenances.
+- **Comptabilité** :
+    - **Avancé** : Comptabilisation automatique des NDF et des consommations Ulys.
+    - **En cours** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers.
+    - **À faire** : Finaliser les journaux (achats, ventes, banque), Grand Livre.
+- **Paie** :
+    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais) et génération d'exports CSV.
+    - **À faire** : Préparation des exports pour les logiciels spécialisés (Silae, Sage).
+- **Flottes** :
+    - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
+    - **Avancé** : Gestion des assurances avec alertes d'expiration.
+    - **En cours** : Assignation des véhicules aux employés ou équipes.
+    - **À faire** : Gestion de la Maintenance.
 - **GPAO** : Gestion des ordres de fabrication.
 
 ## 🚀 Stack Technique

@@ -12,9 +12,9 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **Pointage / RH** | Stable | Basse | Saisie des heures des employés et calcul du coût de la main-d'œuvre par chantier. |
 | **Notes de Frais** | Stable | Basse | Gestion des dépenses avec workflow de validation et comptabilisation automatique. |
 | **GED** | Stable | Basse | Gestion électronique des documents avec métadonnées et alertes d'expiration. |
-| **Comptabilité** | En cours | **Haute** | Finalisation des journaux (vente/achat/banque), Grand Livre et exports FEC. La comptabilisation des NDF est fonctionnelle. |
-| **Paie** | En cours | **Haute** | Finalisation du service de calcul des fiches de paie (import heures/frais) et création des exports (Silae/Sage). |
-| **Flottes** | En cours | **Haute** | Gestion des véhicules, engins, assurances, consommations (Ulys) et maintenances. |
+| **Comptabilité** | Avancé | **Haute** | Comptabilisation automatique des NDF et consommations Ulys. Génération du FEC avec gestion des tiers. Reste à finaliser les journaux et le Grand Livre. |
+| **Paie** | Avancé | **Haute** | Calcul des fiches de paie (agrégation heures/frais) et génération d'exports CSV. Reste à affiner les exports pour les logiciels spécialisés. |
+| **Flottes** | Avancé | **Haute** | Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Assignation des véhicules aux employés ou équipes. Reste à gérer la Maintenance. |
 | **GPAO** | En cours | Moyenne | Gestion des Ordres de Fabrication (OF). La gestion de la nomenclature (recette) est déjà faite. |
 | **3D Vision** | En cours | Moyenne | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
 | **Locations** | À faire | Moyenne | Gestion des contrats de location de matériel (internes ou externes) et de leur planning. |
