@@ -2,6 +2,7 @@
 
 namespace App\Models\Fleets;
 
+use App\Enums\Fleets\FleetType;
 use App\Models\Core\Company;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,6 +38,8 @@ class Fleet extends Model implements HasMedia
             'purchase_date' => 'date',
             'is_available' => 'boolean',
             'last_check_date' => 'date',
+            'type' => FleetType::class,
+            'mileage' => 'integer',
         ];
     }
 }
