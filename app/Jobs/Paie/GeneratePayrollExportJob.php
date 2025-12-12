@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Paie;
 
+use App\Models\NoteFrais\Expense;
 use App\Models\Paie\PayrollSlip;
 use App\Services\Paie\PayrollCalculator;
 use App\Services\Paie\PayrollExportService;
@@ -42,8 +43,21 @@ class GeneratePayrollExportJob implements ShouldQueue
                 ->usingFileName($fileName)
                 ->toMediaCollection('payroll-exports');
 
-            // Optionnel : Mettre à jour un statut sur le bulletin
+            // 4. Mettre à jour le statut du bulletin de paie
             $this->slip->update(['processed_at' => now()]);
+
+            // 5. Mettre à jour les notes de frais associées
+            $this->slip->variables()
+                ->where('sourceable_type', Expense::class)
+                ->get()
+                ->each(function ($variable) {
+                    if ($variable->sourceable) {
+                        $variable->sourceable->update([
+                            'reimbursed_at' => now(),
+                            'reimbursed_by_payroll_slip_id' => $this->slip->id,
+                        ]);
+                    }
+                });
 
             Log::info("Export de paie généré avec succès pour le bulletin #{$this->slip->id}");
 

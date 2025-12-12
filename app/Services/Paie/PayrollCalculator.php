@@ -92,8 +92,7 @@ class PayrollCalculator
             ]);
             $totalExpensesAmount += $amount;
 
-            // ⚠️ AUTOMATISME CRUCIAL : Marquer la note de frais comme "en cours de remboursement"
-            $expense->update(['reimbursed_at' => now(), 'reimbursed_by_payroll_slip_id' => $slip->id]);
+            // La mise à jour de reimbursed_at et reimbursed_by_payroll_slip_id sera faite dans le Job d'export
         }
     }
 
