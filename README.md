@@ -26,14 +26,14 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
     - **Avancé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers.
     - **Avancé** : Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**.
 - **Paie** :
-    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables**.
+    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**.
     - **Avancé** : Génération d'exports CSV avec support de différents formats (Silae, Sage, générique).
 - **Flottes** :
     - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
     - **Avancé** : Gestion des assurances avec alertes d'expiration.
     - **Avancé** : Gestion des maintenances avec alertes d'échéance.
     - **Avancé** : Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**.
-- **GPAO** : Gestion des ordres de fabrication.
+- **GPAO** : **Avancé** : Gestion des ordres de fabrication, **incluant la planification, le suivi de statut, la mise à jour des stocks de composants et produits finis, et les notifications d'assignation**.
 
 ## 🚀 Stack Technique
 

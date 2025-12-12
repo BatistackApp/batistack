@@ -35,7 +35,7 @@ class TimesheetObserver
         $this->updateChantiersLaborCost($timesheet->chantiers_id);
 
         // Si on a changé de projet, il faut recalculer l'ancien aussi !
-        if ($timesheet->wasChanged('project_id')) {
+        if ($timesheet->wasChanged('chantiers_id')) { // Correction: 'project_id' -> 'chantiers_id'
             $this->updateChantiersLaborCost($timesheet->getOriginal('chantiers_id'));
         }
 
@@ -72,15 +72,28 @@ class TimesheetObserver
     {
         if (!$chantiersId) return;
 
-        // On fait une somme pondérée : Heures * Coût Horaire de l'employé à l'instant T
-        // Note : Pour être puriste, on devrait historiser le coût horaire de l'employé,
-        // mais pour une V1, utiliser le coût actuel de la fiche employé est standard.
+        // Définir les multiplicateurs de coût pour chaque type d'heure
+        // Ces multiplicateurs représentent le coût pour l'entreprise, pas nécessairement le taux de paie.
+        $costMultipliers = [
+            TimesheetType::Work->value => 1.0,
+            TimesheetType::Travel->value => 1.0, // Le temps de trajet est aussi un coût de main d'œuvre
+            TimesheetType::Overtime25->value => 1.25, // 25% de majoration
+            TimesheetType::Overtime50->value => 1.50, // 50% de majoration
+            TimesheetType::NightHour->value => 1.25, // 25% de majoration pour les heures de nuit
+            TimesheetType::SundayHour->value => 1.50, // 50% de majoration pour les heures du dimanche
+            // TimesheetType::Absence et TimesheetType::Training ne sont pas des coûts directs de main d'œuvre pour un chantier
+        ];
 
-        $totalCost = DB::table('timesheets')
-            ->join('employees', 'timesheets.employee_id', '=', 'employees.id')
-            ->where('timesheets.chantiers_id', $chantiersId)
-            ->where('timesheets.type', TimesheetType::Work->value) // On ne compte que le travail effectif (pas les trajets/absences)
-            ->sum(DB::raw('timesheets.hours * employees.hourly_cost'));
+        $totalCost = 0;
+
+        foreach ($costMultipliers as $typeValue => $multiplier) {
+            $costForType = DB::table('timesheets')
+                ->join('employees', 'timesheets.employee_id', '=', 'employees.id')
+                ->where('timesheets.chantiers_id', $chantiersId)
+                ->where('timesheets.type', $typeValue)
+                ->sum(DB::raw("timesheets.hours * employees.hourly_cost * {$multiplier}"));
+            $totalCost += $costForType;
+        }
 
         // Mise à jour silencieuse (pour ne pas déclencher l'observer Project)
         Chantiers::where('id', $chantiersId)->update(['total_labor_cost' => $totalCost]);

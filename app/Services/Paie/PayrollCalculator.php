@@ -103,6 +103,10 @@ class PayrollCalculator
     {
         return match ($type) {
             TimesheetType::Work, TimesheetType::Travel => PayrollVariableType::StandardHour,
+            TimesheetType::Overtime25 => PayrollVariableType::Overtime25,
+            TimesheetType::Overtime50 => PayrollVariableType::Overtime50,
+            TimesheetType::NightHour => PayrollVariableType::NightHour,
+            TimesheetType::SundayHour => PayrollVariableType::SundayHour,
             TimesheetType::Absence => PayrollVariableType::Absence,
             default => null, // On ignore les autres types comme 'Training' pour l'instant
         };
