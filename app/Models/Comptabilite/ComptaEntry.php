@@ -3,6 +3,7 @@
 namespace App\Models\Comptabilite;
 
 use App\Models\Core\Company;
+use App\Models\Tiers\Tiers;
 use App\Observers\Comptabilite\ComptaEntryObserver;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -25,6 +26,11 @@ class ComptaEntry extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(ComptaAccount::class);
+    }
+
+    public function tier(): BelongsTo
+    {
+        return $this->belongsTo(Tiers::class);
     }
 
     /**

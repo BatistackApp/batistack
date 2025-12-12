@@ -3,8 +3,10 @@
 namespace App\Services\Comptabilite;
 
 use App\Enums\NoteFrais\ExpenseStatus;
+use App\Enums\Tiers\TierNature;
 use App\Models\Comptabilite\ComptaEntry;
 use App\Models\NoteFrais\Expense;
+use App\Models\Tiers\Tiers;
 use DB;
 use Log;
 
@@ -18,8 +20,7 @@ class ExpenseComptaService
      */
     public function postExpenseEntry(Expense $expense): bool
     {
-        // 1. Vérifications préliminaires
-        if ($expense->status === ExpenseStatus::Posted->value) {
+        if ($expense->status === ExpenseStatus::Posted) {
             Log::warning("Expense {$expense->id} est déjà comptabilisée. Skip.");
             return true;
         }
@@ -27,13 +28,22 @@ class ExpenseComptaService
         // Assumer que les ID des comptes sont configurés dans la company ou ailleurs
         // Pour cet exemple, nous utiliserons des ID de comptes par défaut (à adapter)
         $company = $expense->company;
+        $employee = $expense->employee;
 
-        // Exemple d'ID de comptes (Devrait venir d'une configuration métier)
-        $compteChargeId  = $company->default_expense_charge_account_id ?? 60000;
-        $compteTvaId     = $company->default_vat_account_id ?? 44566;
-        $compteCreditId  = $company->default_supplier_account_id ?? 40100; // Ou Compte Employé 42100 si c'est un remboursement
+        // --- Logique pour trouver ou créer le Tiers correspondant à l'employé ---
+        $tier = Tiers::firstOrCreate(
+            ['company_id' => $company->id, 'email' => $employee->email],
+            [
+                'name' => $employee->full_name,
+                'nature' => TierNature::Employee,
+                'is_active' => true,
+            ]
+        );
 
-        // Assumons que le journal d'achat (ACH) est utilisé, ou un journal OD spécifique.
+        $compteChargeId = $company->default_expense_charge_account_id ?? 60000;
+        $compteTvaId = $company->default_vat_account_id ?? 44566;
+        $compteCreditId = $company->default_employee_account_id ?? 42100; // Compte Employé
+
         $journalId = $company->default_purchase_journal_id ?? 3;
 
         DB::beginTransaction();
@@ -43,7 +53,7 @@ class ExpenseComptaService
             $tva = $expense->vat_amount;
 
             $reference = "NDF-{$expense->id}";
-            $dateCompta = $expense->validated_at ?? $expense->date; // Date de validation ou date de la dépense
+            $dateCompta = $expense->validated_at ?? $expense->date;
 
             // Écriture 1 : Débit - Compte de Charge (HT)
             ComptaEntry::create([
@@ -51,7 +61,7 @@ class ExpenseComptaService
                 'journal_id' => $journalId,
                 'account_id' => $compteChargeId,
                 'date'       => $dateCompta,
-                'label'      => "NDF {$expense->employee->full_name} - {$expense->label} (HT)",
+                'label'      => "NDF {$employee->full_name} - {$expense->label} (HT)",
                 'debit'      => $totalHT,
                 'credit'     => 0,
                 'reference'  => $reference,
@@ -59,7 +69,7 @@ class ExpenseComptaService
                 'sourceable_id' => $expense->id,
             ]);
 
-            // Écriture 2 : Débit - Compte de TVA (TVA Déductible)
+            // Écriture 2 : Débit - Compte de TVA
             if ($tva > 0) {
                 ComptaEntry::create([
                     'company_id' => $company->id,
@@ -75,13 +85,14 @@ class ExpenseComptaService
                 ]);
             }
 
-            // Écriture 3 : Crédit - Compte Fournisseur / Employé (TTC)
+            // Écriture 3 : Crédit - Compte Employé (TTC)
             ComptaEntry::create([
                 'company_id' => $company->id,
                 'journal_id' => $journalId,
                 'account_id' => $compteCreditId,
+                'tier_id'    => $tier->id, // <-- Association du Tiers
                 'date'       => $dateCompta,
-                'label'      => "NDF {$expense->employee->full_name} - {$expense->label} (TTC)",
+                'label'      => "NDF {$employee->full_name} - {$expense->label} (TTC)",
                 'debit'      => 0,
                 'credit'     => $totalTTC,
                 'reference'  => $reference,
@@ -89,7 +100,6 @@ class ExpenseComptaService
                 'sourceable_id' => $expense->id,
             ]);
 
-            // Marquer la note de frais comme comptabilisée
             $expense->update(['status' => ExpenseStatus::Posted]);
 
             DB::commit();
@@ -98,7 +108,6 @@ class ExpenseComptaService
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error("Erreur de comptabilisation NDF {$expense->id}: " . $e->getMessage());
-            // TODO: Ajouter une notification Filament aux Gestionnaires Financiers
             return false;
         }
     }

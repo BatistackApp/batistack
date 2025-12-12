@@ -3,8 +3,10 @@
 namespace App\Services\Comptabilite;
 
 use App\Enums\Fleets\UlysConsumptionStatus;
+use App\Enums\Tiers\TierNature;
 use App\Models\Comptabilite\ComptaEntry;
 use App\Models\Fleets\UlysConsumption;
+use App\Models\Tiers\Tiers;
 use DB;
 use Log;
 
@@ -18,7 +20,6 @@ class UlysComptaService
      */
     public function postUlysConsumptionEntry(UlysConsumption $consumption): bool
     {
-        // 1. Vérifications préliminaires
         if ($consumption->status === UlysConsumptionStatus::Posted) {
             Log::warning("UlysConsumption {$consumption->id} est déjà comptabilisée. Skip.");
             return true;
@@ -26,17 +27,24 @@ class UlysComptaService
 
         $company = $consumption->company;
 
-        // TODO: Utiliser des comptes configurables par l'entreprise
-        $compteChargeId = $company->default_fuel_charge_account_id ?? 60610; // Compte Carburant
-        $compteTvaId    = $company->default_vat_account_id ?? 44566;
-        $compteCreditId = $company->default_ulys_supplier_account_id ?? 40110; // Fournisseur Ulys
+        // --- Logique pour trouver ou créer le Tiers "Ulys" ---
+        $tier = Tiers::firstOrCreate(
+            ['company_id' => $company->id, 'name' => 'Ulys'],
+            [
+                'nature' => TierNature::COMPANY,
+                'is_active' => true,
+                'is_supplier' => true,
+            ]
+        );
 
-        $journalId = $company->default_purchase_journal_id ?? 3; // Journal d'Achat
+        $compteChargeId = $company->default_fuel_charge_account_id ?? 60610;
+        $compteTvaId = $company->default_vat_account_id ?? 44566;
+        $compteCreditId = $company->default_ulys_supplier_account_id ?? 40110;
+
+        $journalId = $company->default_purchase_journal_id ?? 3;
 
         DB::beginTransaction();
         try {
-            // Pour l'instant, on suppose que le montant est TTC et la TVA est à 20%
-            // Une logique plus fine sera nécessaire pour extraire la TVA réelle
             $totalTTC = $consumption->amount;
             $totalHT = round($totalTTC / 1.2, 2);
             $tva = $totalTTC - $totalHT;
@@ -50,7 +58,7 @@ class UlysComptaService
                 'journal_id' => $journalId,
                 'account_id' => $compteChargeId,
                 'date'       => $dateCompta,
-                'label'      => "Frais Ulys - {$consumption->description} (HT)",
+                'label'      => "Frais Ulys - {$consumption->transaction_date->format('d-m-Y H:i')} (HT)",
                 'debit'      => $totalHT,
                 'credit'     => 0,
                 'reference'  => $reference,
@@ -65,7 +73,7 @@ class UlysComptaService
                     'journal_id' => $journalId,
                     'account_id' => $compteTvaId,
                     'date'       => $dateCompta,
-                    'label'      => "TVA sur frais Ulys - {$consumption->description}",
+                    'label'      => "TVA sur frais Ulys - {$consumption->transaction_date->format('d-m-Y H:i')}",
                     'debit'      => $tva,
                     'credit'     => 0,
                     'reference'  => $reference,
@@ -79,8 +87,9 @@ class UlysComptaService
                 'company_id' => $company->id,
                 'journal_id' => $journalId,
                 'account_id' => $compteCreditId,
+                'tier_id'    => $tier->id, // <-- Association du Tiers
                 'date'       => $dateCompta,
-                'label'      => "Frais Ulys - {$consumption->description} (TTC)",
+                'label'      => "Frais Ulys - {$consumption->transaction_date->format('d-m-Y H:i')} (TTC)",
                 'debit'      => 0,
                 'credit'     => $totalTTC,
                 'reference'  => $reference,
@@ -88,7 +97,6 @@ class UlysComptaService
                 'sourceable_id' => $consumption->id,
             ]);
 
-            // Marquer la consommation comme comptabilisée
             $consumption->update(['status' => UlysConsumptionStatus::Posted]);
 
             DB::commit();
@@ -97,7 +105,6 @@ class UlysComptaService
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error("Erreur de comptabilisation UlysConsumption {$consumption->id}: " . $e->getMessage());
-            // TODO: Ajouter une notification Filament aux Gestionnaires Financiers
             return false;
         }
     }

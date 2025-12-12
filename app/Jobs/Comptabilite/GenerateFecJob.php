@@ -13,7 +13,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use League\Csv\CannotInsertRecord;
 use League\Csv\Exception;
-use League\Csv\InvalidArgument;
 use League\Csv\Writer;
 use Storage;
 
@@ -34,19 +33,15 @@ class GenerateFecJob implements ShouldQueue
      */
     public function handle(): void
     {
-        // 1. Préparation du fichier
-        // Format du nom FEC : SirenFECYYYYMMDD.txt (Norme DGFIP)
         $siren = $this->company->siren ?? '000000000';
         $dateCloture = str_replace('-', '', $this->fiscalYearEnd);
         $fileName = "{$siren}FEC{$dateCloture}.txt";
         $filePath = "exports/fec/{$this->company->id}/{$fileName}";
 
-        // Création du Writer CSV (Tabulation separator pour le FEC standard)
         $csv = Writer::createFromString('');
-        $csv->setDelimiter("\t"); // Séparateur Tabulation
-        $csv->setEndOfLine("\r\n"); // Retour chariot Windows
+        $csv->setDelimiter("\t");
+        $csv->setEndOfLine("\r\n");
 
-        // 2. En-tête FEC (Norme A47)
         $headers = [
             'JournalCode', 'JournalLib', 'EcritureNum', 'EcritureDate',
             'CompteNum', 'CompteLib', 'CompAuxNum', 'CompAuxLib',
@@ -60,41 +55,38 @@ class GenerateFecJob implements ShouldQueue
             \Log::emergency($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
 
-        // 3. Récupération des écritures (Chunking pour la mémoire)
         ComptaEntry::query()
             ->where('company_id', $this->company->id)
             ->whereBetween('date', [$this->fiscalYearStart, $this->fiscalYearEnd])
-            ->with(['journal', 'account'])
+            ->with(['journal', 'account', 'tier']) // Chargement de la relation tier
             ->orderBy('date')
             ->chunk(500, function ($entries) use ($csv) {
                 foreach ($entries as $entry) {
                     $csv->insertOne([
-                        $entry->journal->code,                      // JournalCode
-                        $entry->journal->name,                      // JournalLib
-                        $entry->reference ?? $entry->id,            // EcritureNum (Séquentiel ou Ref)
-                        $entry->date->format('Ymd'),                // EcritureDate
-                        $entry->account->number,                    // CompteNum
-                        $entry->account->name,                      // CompteLib
-                        '',                                         // CompAuxNum (Si auxiliaire, à gérer)
-                        '',                                         // CompAuxLib
-                        $entry->reference,                          // PieceRef
-                        $entry->date->format('Ymd'),                // PieceDate
-                        $entry->label,                              // EcritureLib
-                        number_format($entry->debit, 2, ',', ''),   // Debit (Virgule française)
-                        number_format($entry->credit, 2, ',', ''),  // Credit
-                        $entry->lettrage,                           // EcritureLet
-                        '',                                         // DateLet
-                        $entry->created_at->format('Ymd'),          // ValidDate
-                        '',                                         // Montantdevise
-                        '',                                         // Idevise
+                        $entry->journal->code,
+                        $entry->journal->name,
+                        $entry->reference ?? $entry->id,
+                        $entry->date->format('Ymd'),
+                        $entry->account->number,
+                        $entry->account->name,
+                        $entry->tier->id ?? '',          // CompAuxNum
+                        $entry->tier->name ?? '',        // CompAuxLib
+                        $entry->reference,
+                        $entry->date->format('Ymd'),
+                        $entry->label,
+                        number_format($entry->debit, 2, ',', ''),
+                        number_format($entry->credit, 2, ',', ''),
+                        $entry->lettrage,
+                        '',
+                        $entry->created_at->format('Ymd'),
+                        '',
+                        '',
                     ]);
                 }
             });
 
-        // 4. Sauvegarde
         Storage::put($filePath, $csv->toString());
 
-        // 5. Notification
         $this->requestingUser->notify(new FecReadyNotification($filePath));
     }
 }
