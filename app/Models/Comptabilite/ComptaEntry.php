@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class ComptaEntry extends Model
 {
     use HasFactory, BelongsToCompany;
+    protected $guarded = [];
 
     public function journal(): BelongsTo
     {
