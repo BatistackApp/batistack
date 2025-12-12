@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([PayrollSlipObserver::class])]
-class PayrollSlip extends Model
+class PayrollSlip extends Model implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
     protected $guarded = [];
 
     public function period(): BelongsTo
@@ -35,6 +37,7 @@ class PayrollSlip extends Model
     {
         return [
             'is_validated' => 'boolean',
+            'processed_at' => 'datetime',
         ];
     }
 }
