@@ -7,12 +7,12 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **Tiers (CRM)** | Stable | Basse | Gestion des clients, fournisseurs et sous-traitants. |
 | **Chantiers** | Stable | Basse | Suivi des projets, incluant la gestion des coûts de main-d'œuvre mis à jour automatiquement. |
 | **Articles & Stock** | Stable | Basse | Gestion du catalogue d'articles, des ouvrages (recettes) et du stock multi-dépôts. |
-| **Commerce / Facturation** | Stable | Basse | Création de devis, factures, acomptes et suivi des paiements. |
+| **Commerce / Facturation** | Stable | Basse | Création de devis, factures, acomptes et suivi des paiements. **Inclut désormais la gestion des factures fournisseurs.** |
 | **Banque** | Stable | Basse | Gestion des comptes, synchronisation des transactions et rapprochement bancaire automatisé. |
 | **Pointage / RH** | Stable | Basse | Saisie des heures des employés et calcul du coût de la main-d'œuvre par chantier. |
 | **Notes de Frais** | Stable | Basse | Gestion des dépenses avec workflow de validation et comptabilisation automatique. |
 | **GED** | Stable | Basse | Gestion électronique des documents avec métadonnées et alertes d'expiration. |
-| **Comptabilité** | Avancé | **Haute** | Comptabilisation automatique des NDF et consommations Ulys. Génération du FEC avec gestion des tiers. Reporting des journaux et Grand Livre. |
+| **Comptabilité** | Avancé | **Haute** | Comptabilisation automatique des NDF, consommations Ulys, **factures de vente et factures fournisseurs**. Génération du FEC avec gestion des tiers. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. |
 | **Paie** | Avancé | **Haute** | Calcul des fiches de paie (agrégation heures/frais) et génération d'exports CSV avec support de différents formats (Silae, Sage, générique). |
 | **Flottes** | Avancé | **Haute** | Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes. |
 | **GPAO** | En cours | Moyenne | Gestion des Ordres de Fabrication (OF). La gestion de la nomenclature (recette) est déjà faite. |
