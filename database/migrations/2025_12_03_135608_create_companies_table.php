@@ -18,6 +18,8 @@ return new class extends Migration {
             $table->string('current_plan');
             $table->string('stripe_id')->nullable()->index();
 
+            $table->date('accounting_closed_at')->default(now()->endOfYear());
+
             $table->timestamps();
         });
     }

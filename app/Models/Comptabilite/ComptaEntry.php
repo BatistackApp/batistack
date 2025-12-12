@@ -3,12 +3,15 @@
 namespace App\Models\Comptabilite;
 
 use App\Models\Core\Company;
+use App\Observers\Comptabilite\ComptaEntryObserver;
 use App\Trait\BelongsToCompany;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+#[ObservedBy([ComptaEntryObserver::class])]
 class ComptaEntry extends Model
 {
     use HasFactory, BelongsToCompany;

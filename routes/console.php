@@ -48,3 +48,10 @@ Schedule::command("fleet:sync-ulys-consumptions")
     ->withoutOverlapping()
     ->sendOutputTo(storage_path('logs/schedule/sync-ulys-consumptions.log'))
     ->description("Synchronise les consommations de télépéage Ulys pour les flottes configurées.");
+
+Schedule::command("compta:check-integrity")
+    ->daily()
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/compta-check-integrity.log'))
+    ->description("Vérifie que la comptabilité est équilibrée (Débit = Crédit) pour chaque entreprise.");
