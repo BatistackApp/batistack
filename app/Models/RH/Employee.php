@@ -3,6 +3,8 @@
 namespace App\Models\RH;
 
 use App\Models\Core\Company;
+use App\Models\Fleets\Fleet;
+use App\Models\Fleets\FleetAssignment;
 use App\Models\User;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Employee extends Model
 {
@@ -30,6 +33,11 @@ class Employee extends Model
     public function timesheets(): HasMany
     {
         return $this->hasMany(Timesheet::class);
+    }
+
+    public function fleetAssignments(): MorphMany
+    {
+        return $this->morphMany(FleetAssignment::class, 'assignable');
     }
 
     protected function casts(): array
