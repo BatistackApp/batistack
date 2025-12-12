@@ -56,6 +56,13 @@ Schedule::command('fleet:check-maintenance-alerts')
     ->sendOutputTo(storage_path('logs/schedule/fleet-check-maintenance-alerts.log'))
     ->description("Synchronise les maintenance pour les flottes");
 
+Schedule::command('fleet:check-assignment-reminders')
+    ->dailyAt('09:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/fleet-check-assignment-reminders.log'))
+    ->description("Vérifie les assignations de flotte dont la fin approche et envoie des rappels.");
+
 Schedule::command("compta:check-integrity")
     ->daily()
     ->onOneServer()

@@ -14,7 +14,7 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **GED** | Stable | Basse | Gestion électronique des documents avec métadonnées et alertes d'expiration. |
 | **Comptabilité** | Avancé | **Haute** | Comptabilisation automatique des NDF, consommations Ulys, **factures de vente et factures fournisseurs**. Génération du FEC avec gestion des tiers. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. |
 | **Paie** | Avancé | **Haute** | Calcul des fiches de paie (agrégation heures/frais) et génération d'exports CSV avec support de différents formats (Silae, Sage, générique). |
-| **Flottes** | Avancé | **Haute** | Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes. |
+| **Flottes** | Avancé | **Haute** | Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. |
 | **GPAO** | En cours | Moyenne | Gestion des Ordres de Fabrication (OF). La gestion de la nomenclature (recette) est déjà faite. |
 | **3D Vision** | En cours | Moyenne | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
 | **Locations** | À faire | Moyenne | Gestion des contrats de location de matériel (internes ou externes) et de leur planning. |

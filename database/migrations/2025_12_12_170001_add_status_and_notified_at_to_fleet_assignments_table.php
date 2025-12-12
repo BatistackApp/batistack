@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('fleet_assignments', function (Blueprint $table) {
+            $table->string('status')->default('scheduled')->after('end_date');
+            $table->timestamp('notified_at')->nullable()->after('status');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('fleet_assignments', function (Blueprint $table) {
+            $table->dropColumn('status');
+            $table->dropColumn('notified_at');
+        });
+    }
+};

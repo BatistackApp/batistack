@@ -1,6 +1,6 @@
 # Batistack - ERP Modulaire pour le BTP
 
-Batistack est une solution ERP (SAAS) modulaire conçue spécifiquement pour les entreprises du secteur de la construction (BTP). Le projet est développé avec le framework Laravel 11 et utilise Filament PHP pour l'ensemble de son interface d'administration.
+Batistack est une solution ERP (SAAS) modulaire conçue spécifiquement pour les entreprises du secteur de la construction (BTP). Le projet est développé avec le framework Laravel 12 et utilise Filament PHP pour l'ensemble de son interface d'administration.
 
 L'architecture est pensée pour être multi-tenant, permettant à chaque entreprise cliente de gérer ses données de manière isolée et sécurisée.
 
@@ -32,12 +32,12 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
     - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
     - **Avancé** : Gestion des assurances avec alertes d'expiration.
     - **Avancé** : Gestion des maintenances avec alertes d'échéance.
-    - **Avancé** : Assignation des véhicules aux employés ou équipes.
+    - **Avancé** : Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**.
 - **GPAO** : Gestion des ordres de fabrication.
 
 ## 🚀 Stack Technique
 
-- **Framework** : Laravel 11
+- **Framework** : Laravel 12
 - **Interface d'Administration** : Filament PHP
 - **Base de Données** : MySQL / PostgreSQL
 - **Gestion des Fichiers** : Spatie Media Library
