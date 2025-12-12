@@ -11,17 +11,6 @@ class Insurance extends Model
     use HasFactory;
     protected $guarded = [];
 
-    protected $fillable = [
-        'fleet_id',
-        'contract_number',
-        'insurer_name',
-        'start_date',
-        'end_date',
-        'annual_cost',
-        'is_active',
-        'notified_at',
-    ];
-
     public function fleet(): BelongsTo
     {
         return $this->belongsTo(Fleet::class);
