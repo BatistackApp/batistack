@@ -13,7 +13,7 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **Notes de Frais** | Stable | Basse | Gestion des dépenses avec workflow de validation et comptabilisation automatique. |
 | **GED** | Stable | Basse | Gestion électronique des documents avec métadonnées et alertes d'expiration. |
 | **Comptabilité** | Avancé | **Haute** | Comptabilisation automatique des NDF, consommations Ulys, **factures de vente et factures fournisseurs**. Génération du FEC avec gestion des tiers. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. |
-| **Paie** | Avancé | **Haute** | Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables**. Génération d'exports CSV avec support de différents formats (Silae, Sage, générique). |
+| **Paie** | Avancé | **Haute** | Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**. Génération d'exports CSV avec support de différents formats (Silae, Sage, générique). |
 | **Flottes** | Avancé | **Haute** | Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. |
 | **GPAO** | En cours | Moyenne | Gestion des Ordres de Fabrication (OF). La gestion de la nomenclature (recette) est déjà faite. |
 | **3D Vision** | En cours | Moyenne | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
