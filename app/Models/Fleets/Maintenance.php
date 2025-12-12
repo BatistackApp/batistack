@@ -2,6 +2,7 @@
 
 namespace App\Models\Fleets;
 
+use App\Enums\Fleets\MaintenanceType;
 use App\Observers\Fleets\MaintenanceObserver;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -25,7 +26,11 @@ class Maintenance extends Model
         return [
             'date_maintenance' => 'date',
             'next_date' => 'date',
-            'cost' => 'decimal'
+            'cost' => 'decimal:2',
+            'type' => MaintenanceType::class,
+            'mileage_at_maintenance' => 'integer',
+            'next_mileage' => 'integer',
+            'notified_at' => 'datetime',
         ];
     }
 }

@@ -28,7 +28,25 @@ class SyncBridgeTransactionJob implements ShouldQueue
         // 1. Appel API Bridge (Pseudo-code)
         // $transactions = Bridge::getTransactions($this->bankAccount->bridge_account_id);
         // Pour l'exemple, imaginons un tableau de résultats :
-        $transactions = [];
+        $transactions = [
+            // Exemple d'une transaction :
+            [
+                'id' => 'bridge-trans-12345',
+                'date' => now()->subDay(2)->toDateString(),
+                'description' => 'Achat Materiel Chantier X',
+                'amount' => -150.50, // Débit
+                'currency' => 'EUR',
+            ],
+            [
+                'id' => 'bridge-trans-67890',
+                'date' => now()->subDay(5)->toDateString(),
+                'description' => 'Paiement Client Y',
+                'amount' => 4500.00, // Crédit
+                'currency' => 'EUR',
+            ],
+        ];
+        //$balanceFromBridge = Bridge::getAccountBalance($this->bankAccount->bridge_account_id);
+        $balanceFromBridge = 12500.00; // Simulé
 
         $newCount = 0;
 
@@ -55,8 +73,13 @@ class SyncBridgeTransactionJob implements ShouldQueue
             }
         }
 
+
         // Mise à jour du solde du compte
         // $this->bankAccount->updateBalance($balanceFromBridge);
+        $this->bankAccount->update([
+            'current_balance' => $balanceFromBridge,
+            'last_synced_at' => now(),
+        ]);
 
         if ($newCount > 0) {
             Log::info("Compte {$this->bankAccount->name} : {$newCount} nouvelles transactions.");

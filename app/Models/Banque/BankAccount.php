@@ -56,6 +56,14 @@ class BankAccount extends Model
      */
     public function updateBalance(float $newBalance): void
     {
-        $this->update(['current_balance' => $newBalance]);
+        if ($newBalance > 0) {
+            $this->increment('current_balance', $newBalance);
+        } elseif ($newBalance < 0) {
+            $this->decrement('current_balance', $newBalance);
+        }
+
+        if ($this->type !== BankAccountType::Bank) {
+            $this->touch('last_synced_at');
+        }
     }
 }

@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Models\Comptabilite;
+
+use App\Models\Core\Company;
+use App\Models\Tiers\Tiers;
+use App\Observers\Comptabilite\ComptaEntryObserver;
+use App\Trait\BelongsToCompany;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+
+#[ObservedBy([ComptaEntryObserver::class])]
+class ComptaEntry extends Model
+{
+    use HasFactory, BelongsToCompany;
+    protected $guarded = [];
+
+    public function journal(): BelongsTo
+    {
+        return $this->belongsTo(ComptaJournal::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(ComptaAccount::class);
+    }
+
+    public function tier(): BelongsTo
+    {
+        return $this->belongsTo(Tiers::class);
+    }
+
+    /**
+     * L'objet à l'origine de l'écriture (ex: Invoice, ExpenseReport, UlysConsumption).
+     */
+    public function sourceable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'date' => 'date',
+            'debit' => 'decimal:2',
+            'credit' => 'decimal:2',
+        ];
+    }
+}

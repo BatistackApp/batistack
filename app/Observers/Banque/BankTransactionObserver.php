@@ -2,10 +2,22 @@
 
 namespace App\Observers\Banque;
 
+use App\Jobs\Banque\AutoReconcileTransactionJob;
 use App\Models\Banque\BankTransaction;
 
 class BankTransactionObserver
 {
+    /**
+     * Déclenche le rapprochement automatique après la création d'une nouvelle transaction.
+     */
+    public function created(BankTransaction $transaction): void
+    {
+        // Ne déclenche que si l'external_id est présent (signifie une transaction importée)
+        if ($transaction->external_id) {
+            AutoReconcileTransactionJob::dispatch($transaction);
+        }
+    }
+
     public function deleting(BankTransaction $transaction): void
     {
         // On empêche la suppression si la transaction est rapprochée

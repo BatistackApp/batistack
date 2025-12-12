@@ -21,7 +21,9 @@ class Insurance extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
-            'annual_cost' => 'decimal',
+            'annual_cost' => 'decimal:2',
+            'is_active' => 'boolean',
+            'notified_at' => 'datetime',
         ];
     }
 }
