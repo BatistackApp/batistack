@@ -33,7 +33,7 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
     - **Avancé** : Gestion des assurances avec alertes d'expiration.
     - **Avancé** : Gestion des maintenances avec alertes d'échéance.
     - **Avancé** : Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**.
-- **GPAO** : Gestion des ordres de fabrication.
+- **GPAO** : **Avancé** : Gestion des ordres de fabrication, **incluant la mise à jour des stocks de composants et produits finis**.
 
 ## 🚀 Stack Technique
 

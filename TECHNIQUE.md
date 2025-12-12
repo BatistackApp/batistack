@@ -9,7 +9,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Saisie des heures des employés et calcul du coût de la main-d'œuvre pour les chantiers.
 - **Implémentation Technique** :
     - **Modèle Principal** : `app/Models/RH/Timesheet.php`. Ce modèle est central et contient la logique de calcul du coût (`cost`) d'une session de travail.
-    - **Types d'Heures** : Utilise l'Enum `app/Enums/RH/TimesheetType.php` pour catégoriser les types de pointage (Travail, Trajet, Absence, Formation).
+    - **Types d'Heures** : Utilise l'Enum `app/Enums/RH/TimesheetType.php` pour catégoriser les types de pointage (Travail, Trajet, Absence, Formation, **Heures Supplémentaires 25% et 50%, Heures de Nuit, Heures du Dimanche**).
     - **Automatisation (Pointages Manquants)** : Une tâche planifiée (cron) exécute la commande `app/Console/Commands/CheckMissingTimesheetsCommand.php`. Cette commande identifie les employés n'ayant pas rempli leurs heures et leur envoie une notification via `app/Notifications/MissingTimesheetNotification.php`.
 
 ---
@@ -18,7 +18,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Gestion des projets, de leurs coûts et de leur localisation.
 - **Implémentation Technique** :
-    - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé.
+    - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé, **en prenant en compte les majorations pour les heures supplémentaires, de nuit et du dimanche**.
     - **Géocodage** : Une automatisation (probablement un observer sur le modèle `Chantier`) convertit l'adresse d'un chantier en coordonnées GPS lors de sa création ou modification.
 
 ---
