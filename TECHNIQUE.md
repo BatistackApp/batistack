@@ -137,9 +137,10 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Implémentation Technique** :
     - **Nomenclature** : La gestion des "recettes" (assemblages de produits) est en place.
     - **Ordres de Fabrication** :
-        - **Modèle Principal** : `app/Models/GPAO/ProductionOrder.php` pour gérer les ordres de fabrication.
+        - **Modèle Principal** : `app/Models/GPAO/ProductionOrder.php` pour gérer les ordres de fabrication, **incluant les champs de planification (`assigned_to`, `planned_start_date`, `planned_end_date`)**.
         - **Statuts** : `app/Enums/GPAO/ProductionOrderStatus.php` pour suivre l'état de l'OF (Brouillon, Planifié, En cours, Terminé, Annulé).
         - **Automatisation (Mise à jour des stocks)** : L'observer `app/Observers/GPAO/ProductionOrderObserver.php` met à jour les stocks (décrémentation des composants, incrémentation du produit fini) lorsque l'OF passe au statut `Completed`.
+        - **Automatisation (Notifications)** : L'observer `app/Observers/GPAO/ProductionOrderObserver.php` envoie des notifications (`app/Notifications/GPAO/ProductionOrderNotification.php`) lors de la création, mise à jour (changement de statut ou d'assignation) et suppression d'un OF.
 
 ---
 
@@ -209,6 +210,8 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
 | Core/Scheduling | routes/console.php | Fichier de planification des commandes Artisan (Laravel 12+). |
 | GPAO/OF | database/migrations/2024_01_01_000000_create_production_orders_table.php | Migration pour la table des ordres de fabrication. |
-| GPAO/OF | app/Models/GPAO/ProductionOrder.php | Modèle principal des ordres de fabrication. |
+| GPAO/OF | database/migrations/2024_01_01_000000_add_planning_fields_to_production_orders_table.php | Migration pour ajouter les champs de planification aux ordres de fabrication. |
+| GPAO/OF | app/Models/GPAO/ProductionOrder.php | Modèle principal des ordres de fabrication, incluant les champs de planification (`assigned_to`, `planned_start_date`, `planned_end_date`). |
 | GPAO/OF | app/Enums/GPAO/ProductionOrderStatus.php | Enum des statuts des ordres de fabrication. |
-| GPAO/OF | app/Observers/GPAO/ProductionOrderObserver.php | Gère la mise à jour des stocks lors de la complétion d'un ordre de fabrication. |
+| GPAO/OF | app/Observers/GPAO/ProductionOrderObserver.php | Gère la mise à jour des stocks et l'envoi de notifications lors des changements de statut d'un ordre de fabrication. |
+| GPAO/OF | app/Notifications/GPAO/ProductionOrderNotification.php | Notification pour les ordres de fabrication (création, mise à jour, changement de statut). |

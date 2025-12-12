@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([ProductionOrderObserver::class])]
@@ -26,6 +27,8 @@ class ProductionOrder extends Model
             'status' => ProductionOrderStatus::class,
             'start_date' => 'date',
             'end_date' => 'date',
+            'planned_start_date' => 'date',
+            'planned_end_date' => 'date',
             'quantity' => 'decimal:2',
         ];
     }
@@ -38,6 +41,11 @@ class ProductionOrder extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function assignedTo(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     // Méthode pour vérifier si l'OF est verrouillé (non modifiable)

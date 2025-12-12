@@ -6,12 +6,38 @@ use App\Enums\GPAO\ProductionOrderStatus;
 use App\Models\GPAO\ProductionOrder;
 use App\Models\Articles\InventoryStock;
 use App\Models\Articles\Product;
+use App\Notifications\GPAO\ProductionOrderNotification; // Import the notification
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
 class ProductionOrderObserver
 {
+    /**
+     * Handle the ProductionOrder "created" event.
+     */
+    public function created(ProductionOrder $productionOrder): void
+    {
+        // Envoyer une notification lors de la création d'un OF
+        $this->sendNotification($productionOrder, 'created');
+    }
+
+    /**
+     * Handle the ProductionOrder "updated" event.
+     */
+    public function updated(ProductionOrder $productionOrder): void
+    {
+        // Si le statut a changé, envoyer une notification de changement de statut
+        if ($productionOrder->isDirty('status')) {
+            $this->sendNotification($productionOrder, 'status_changed');
+        }
+
+        // Si l'assignation a changé, envoyer une notification de mise à jour
+        if ($productionOrder->isDirty(['assigned_to_id', 'assigned_to_type'])) {
+            $this->sendNotification($productionOrder, 'updated');
+        }
+    }
+
     /**
      * Handle the ProductionOrder "saved" event.
      * This event is fired after a model is created or updated.
@@ -81,7 +107,21 @@ class ProductionOrderObserver
      */
     public function deleted(ProductionOrder $productionOrder): void
     {
+        $this->sendNotification($productionOrder, 'deleted');
         // Optionnel : Gérer l'annulation d'un OF terminé (remettre les stocks ?)
         // C'est une logique complexe qui dépend des règles métier (ex: annulation possible si OF récent, sinon OD de correction)
+    }
+
+    /**
+     * Send a notification to the assigned entity.
+     */
+    private function sendNotification(ProductionOrder $productionOrder, string $type): void
+    {
+        $assignedTo = $productionOrder->assignedTo;
+
+        if ($assignedTo && method_exists($assignedTo, 'notify')) {
+            $assignedTo->notify(new ProductionOrderNotification($productionOrder, $type));
+        }
+        // TODO: Si assignedTo est une équipe, notifier tous les membres de l'équipe
     }
 }
