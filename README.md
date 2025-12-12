@@ -26,7 +26,7 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
     - **Avancé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers.
     - **Avancé** : Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**.
 - **Paie** :
-    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais).
+    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables**.
     - **Avancé** : Génération d'exports CSV avec support de différents formats (Silae, Sage, générique).
 - **Flottes** :
     - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
