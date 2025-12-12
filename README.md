@@ -24,10 +24,10 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
 - **Comptabilité** :
     - **Avancé** : Comptabilisation automatique des NDF et des consommations Ulys.
     - **Avancé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers.
-    - **En cours** : Finalisation des journaux (achats, ventes, banque), Grand Livre.
+    - **Avancé** : Reporting des journaux et Grand Livre.
 - **Paie** :
-    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais) et génération d'exports CSV.
-    - **À faire** : Préparation des exports pour les logiciels spécialisés (Silae, Sage).
+    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais).
+    - **Avancé** : Génération d'exports CSV avec support de différents formats (Silae, Sage, générique).
 - **Flottes** :
     - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
     - **Avancé** : Gestion des assurances avec alertes d'expiration.
