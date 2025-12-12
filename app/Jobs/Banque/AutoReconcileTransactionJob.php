@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Log;
 
 class AutoReconcileTransactionJob implements ShouldQueue
 {
@@ -52,6 +53,8 @@ class AutoReconcileTransactionJob implements ShouldQueue
             ]);
 
             // Note : L'Observer de Payment (vu ci-dessous) s'occupera de mettre à jour la Facture.
+        } else {
+            Log::info("Rapprochement auto: Aucun match trouvé pour Transaction #{$this->transaction->id}.");
         }
     }
 }

@@ -8,6 +8,7 @@ use App\Models\NoteFrais\Expense;
 use App\Models\User;
 use App\Notifications\NoteFrais\ExpenseStatusUpdatedNotification;
 use App\Notifications\NoteFrais\ExpenseSubmittedNotification;
+use App\Services\Comptabilite\ExpenseComptaService;
 use Illuminate\Support\Facades\Notification;
 
 class ExpenseObserver
@@ -65,6 +66,30 @@ class ExpenseObserver
             // On notifie l'employé s'il a un compte utilisateur
             if ($expense->employee->user) {
                 $expense->employee->user->notify(new ExpenseStatusUpdatedNotification($expense));
+            }
+        }
+    }
+
+    /**
+     * @throws \Throwable
+     */
+    public function updated(Expense $expense): void
+    {
+        // 1. Détection de la validation : Est-ce que le champ de validation a changé
+        //    ET est-ce qu'il est maintenant à TRUE ?
+        if ($expense->wasChanged('is_validated') && $expense->is_validated === true) {
+
+            // 2. Vérification de la comptabilisation : S'assurer qu'elle n'est pas déjà comptabilisée.
+            if (!$expense->is_posted) {
+
+                // 3. Appel du service de comptabilisation
+                /** @var ExpenseComptaService $service */
+                $service = app(ExpenseComptaService::class);
+
+                // On pourrait utiliser un Job pour déporter la charge du traitement :
+                // PostExpenseEntryJob::dispatch($expense);
+                // Mais pour une logique simple d'Observer, l'appel direct est suffisant.
+                $service->postExpenseEntry($expense);
             }
         }
     }

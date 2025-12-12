@@ -13,6 +13,8 @@ enum ExpenseStatus: string implements HasLabel, HasColor
     case Rejected = 'rejected';     // Refusé
     case Paid = 'paid';             // Remboursé au salarié
 
+    case Posted = 'posted'; // Comptabilisé
+
     public function getLabel(): ?string
     {
         return match ($this) {
@@ -21,6 +23,7 @@ enum ExpenseStatus: string implements HasLabel, HasColor
             self::Approved => 'Validé',
             self::Rejected => 'Refusé',
             self::Paid => 'Remboursé',
+            self::Posted => 'Comptabilisé',
         };
     }
 
@@ -32,6 +35,7 @@ enum ExpenseStatus: string implements HasLabel, HasColor
             self::Approved => 'success',
             self::Rejected => 'danger',
             self::Paid => 'info',
+            self::Posted => 'primary',
         };
     }
 }
