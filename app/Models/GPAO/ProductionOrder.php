@@ -39,4 +39,10 @@ class ProductionOrder extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    // Méthode pour vérifier si l'OF est verrouillé (non modifiable)
+    public function isLocked(): bool
+    {
+        return in_array($this->status, [ProductionOrderStatus::Completed, ProductionOrderStatus::Cancelled]);
+    }
 }

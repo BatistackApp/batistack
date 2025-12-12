@@ -122,12 +122,12 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Préparation, calcul et export des fiches de paie.
 - **Implémentation Technique** :
-    - **Service de Calcul** : Le service `app/Services/Paie/PayrollCalculator.php` est le moteur principal. Il collecte les heures (`Timesheet`) et les frais (`Expense`) pour une période donnée, les agrège et crée des `PayrollVariable` pour un `PayrollSlip`.
+    - **Service de Calcul** : Le service `app/Services/Paie/PayrollCalculator.php` est le moteur principal. Il collecte les heures (`Timesheet`) et les frais (`Expense`) pour une période donnée, les agrège et crée des `PayrollVariable` pour un `PayrollSlip`. **Il inclut désormais la gestion des différents types d'heures majorées (supplémentaires, nuit, dimanche) pour le calcul.**
     - **Variables de Paie** : L'Enum `app/Enums/Paie/PayrollVariableType.php` est utilisé pour standardiser les différents types d'éléments de paie.
     - **Structure** : Les modèles `PayrollPeriods`, `PayrollSlip`, et `PayrollVariable` forment la structure de base pour stocker les données de paie. Le modèle `PayrollSlip` implémente `HasMedia` et inclut un champ `processed_at`.
     - **Export de Paie** :
         - Le service `app/Services/Paie/PayrollExportService.php` génère un fichier CSV à partir des `PayrollVariable` d'un `PayrollSlip`. Il supporte différents formats d'export (générique, Silae, Sage) via l'Enum `app/Enums/Paie/PayrollExportFormat.php`, avec une logique affinée pour les spécificités de Silae et Sage.
-        - Le Job `app/Jobs/Paie/GeneratePayrollExportJob.php` orchestre le calcul via `PayrollCalculator` et l'export via `PayrollExportService`, puis attache le fichier CSV généré au `PayrollSlip` via Spatie Media Library.
+        - Le Job `app/Jobs/Paie/GeneratePayrollExportJob.php` orchestre le calcul via `PayrollCalculator` et l'export via `PayrollExportService`, puis attache le fichier CSV généré au `PayrollSlip` via Spatie Media Library. **Il marque également les notes de frais comme remboursées après le traitement du bulletin de paie.**
 
 ---
 
@@ -136,7 +136,10 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Gestion des Ordres de Fabrication (OF) et de la nomenclature (recettes).
 - **Implémentation Technique** :
     - **Nomenclature** : La gestion des "recettes" (assemblages de produits) est en place.
-    - **Ordres de Fabrication** : Le développement des modèles et de la logique pour les OF est à faire.
+    - **Ordres de Fabrication** :
+        - **Modèle Principal** : `app/Models/GPAO/ProductionOrder.php` pour gérer les ordres de fabrication.
+        - **Statuts** : `app/Enums/GPAO/ProductionOrderStatus.php` pour suivre l'état de l'OF (Brouillon, Planifié, En cours, Terminé, Annulé).
+        - **Automatisation (Mise à jour des stocks)** : L'observer `app/Observers/GPAO/ProductionOrderObserver.php` met à jour les stocks (décrémentation des composants, incrémentation du produit fini) lorsque l'OF passe au statut `Completed`.
 
 ---
 
@@ -205,3 +208,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
 | Core/Scheduling | routes/console.php | Fichier de planification des commandes Artisan (Laravel 12+). |
+| GPAO/OF | database/migrations/2024_01_01_000000_create_production_orders_table.php | Migration pour la table des ordres de fabrication. |
+| GPAO/OF | app/Models/GPAO/ProductionOrder.php | Modèle principal des ordres de fabrication. |
+| GPAO/OF | app/Enums/GPAO/ProductionOrderStatus.php | Enum des statuts des ordres de fabrication. |
+| GPAO/OF | app/Observers/GPAO/ProductionOrderObserver.php | Gère la mise à jour des stocks lors de la complétion d'un ordre de fabrication. |

@@ -17,5 +17,5 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **Flottes** | Avancé | **Haute** | Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. |
 | **GPAO** | Avancé | Moyenne | Gestion des Ordres de Fabrication (OF), **incluant la mise à jour des stocks de composants et produits finis**. La gestion de la nomenclature (recette) est déjà faite. |
 | **3D Vision** | En cours | Moyenne | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
-| **Locations** | À faire | Moyenne | Gestion des contrats de location de matériel (internes ou externes) et de leur planning. |
+| **Locations** | À faire | Moyenne | Gestion des contrats de location de matériel (interne ou externe) et de leur planning. |
 | **Intervention** | À faire | Basse | Gestion et suivi des interventions de maintenance sur les sites ou chantiers. |

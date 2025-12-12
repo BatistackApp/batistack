@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('reference')->unique();
-            $table->foreignId('product_id')->comment('Produit à fabriquer')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('product_id')->comment('Produit fini à fabriquer')->constrained('products')->cascadeOnDelete();
             $table->decimal('quantity', 15, 2);
             $table->string('status'); // Utilisation d'un Enum pour les statuts
             $table->date('start_date')->nullable();
