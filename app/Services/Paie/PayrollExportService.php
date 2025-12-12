@@ -3,6 +3,7 @@
 namespace App\Services\Paie;
 
 use App\Enums\Paie\PayrollExportFormat;
+use App\Enums\Paie\PayrollVariableType; // Import the enum
 use App\Models\Paie\PayrollSlip;
 use Illuminate\Support\Str;
 
@@ -25,8 +26,7 @@ class PayrollExportService
         // Définition des en-têtes et du délimiteur selon le format
         switch ($format) {
             case PayrollExportFormat::Silae:
-                // TODO: Définir les en-têtes et l'ordre des colonnes spécifiques à Silae
-                // Ceci est un exemple, les spécifications réelles de Silae sont complexes.
+                // En-têtes spécifiques à Silae (exemple basé sur des formats courants)
                 $headers = [
                     'Matricule', 'Nom', 'Prénom', 'CodeRubrique', 'LibelleRubrique', 'Quantite', 'Montant', 'Unite', 'Periode'
                 ];
@@ -34,8 +34,7 @@ class PayrollExportService
                 break;
 
             case PayrollExportFormat::Sage:
-                // TODO: Définir les en-têtes et l'ordre des colonnes spécifiques à Sage
-                // Ceci est un exemple.
+                // En-têtes spécifiques à Sage (exemple basé sur des formats courants)
                 $headers = [
                     'EmployeNum', 'NomEmploye', 'RubriqueCode', 'LibelleRubrique', 'Valeur', 'Unite', 'DateDebut', 'DateFin'
                 ];
@@ -65,29 +64,43 @@ class PayrollExportService
             $row = [];
             switch ($format) {
                 case PayrollExportFormat::Silae:
-                    // TODO: Mapper les données du variable aux colonnes Silae
+                    $quantity = 0;
+                    $amount = 0;
+
+                    // Distinguer quantité (heures) et montant (valeur monétaire)
+                    if (in_array($variable->type, [
+                        PayrollVariableType::StandardHour,
+                        PayrollVariableType::Overtime25,
+                        PayrollVariableType::Overtime50,
+                        PayrollVariableType::NightHour,
+                        PayrollVariableType::SundayHour,
+                        PayrollVariableType::Absence, // Les absences peuvent être en quantité d'heures à déduire
+                    ])) {
+                        $quantity = $variable->quantity;
+                    } else {
+                        $amount = $variable->quantity; // Pour Bonus, ExpenseRefund, la quantité est le montant
+                    }
+
                     $row = [
                         $employeeId,
                         $slip->employee->last_name,
                         $slip->employee->first_name,
-                        $variable->code,
+                        $variable->code, // Utilisation du code de la variable comme CodeRubrique
                         $variable->label,
-                        number_format($variable->quantity, 2, '.', ''),
-                        // Silae peut nécessiter une distinction entre quantité et montant
-                        '', // Montant (si différent de quantité)
+                        number_format($quantity, 2, '.', ''),
+                        number_format($amount, 2, '.', ''),
                         $variable->unit,
                         $periodName,
                     ];
                     break;
 
                 case PayrollExportFormat::Sage:
-                    // TODO: Mapper les données du variable aux colonnes Sage
                     $row = [
                         $employeeId,
                         $employeeName,
-                        $variable->code,
+                        $variable->code, // Utilisation du code de la variable comme RubriqueCode
                         $variable->label,
-                        number_format($variable->quantity, 2, '.', ''),
+                        number_format($variable->quantity, 2, '.', ''), // Sage utilise souvent une seule valeur
                         $variable->unit,
                         $slip->period->start_date->format('Ymd'),
                         $slip->period->end_date->format('Ymd'),
