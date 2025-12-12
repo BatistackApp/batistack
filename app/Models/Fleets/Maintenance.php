@@ -30,6 +30,7 @@ class Maintenance extends Model
             'type' => MaintenanceType::class,
             'mileage_at_maintenance' => 'integer',
             'next_mileage' => 'integer',
+            'notified_at' => 'datetime',
         ];
     }
 }

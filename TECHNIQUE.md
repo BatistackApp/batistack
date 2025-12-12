@@ -59,12 +59,14 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
         - Il remplit les champs `CompAuxNum` et `CompAuxLib` avec les informations du `Tiers` associé à l'écriture.
+    - **Reporting Comptable** :
+        - Le service `app/Services/Comptabilite/ComptaReportingService.php` fournit des méthodes pour récupérer les écritures par journal (`getJournalEntries`) ou par compte (`getGeneralLedgerEntries`), et calculer les soldes (`getAccountBalanceAtDate`).
 
 ---
 
 ### Module : Flottes
 
-- **Description Fonctionnelle** : Gestion de la flotte de véhicules, des assurances, des consommations et des assignations.
+- **Description Fonctionnelle** : Gestion de la flotte de véhicules, des assurances, des consommations, des maintenances et des assignations.
 - **Implémentation Technique** :
     - **Modèle Principal** : `app/Models/Fleets/Fleet.php` est enrichi avec des détails comme `name`, `registration_number`, `type` (via `app/Enums/Fleets/FleetType.php`), `brand`, `model`, `vin`, `mileage`.
     - **Synchronisation Ulys** : La commande `app/Console/Commands/Fleets/SyncUlysConsumptionsCommand.php` utilise le service `app/Services/Fleets/UlysService.php` pour récupérer les données de consommation de l'API Ulys et les stocker dans le modèle `app/Models/Fleets/UlysConsumption.php`. Le modèle `UlysConsumption` inclut un `status` (`Pending`, `Posted`) pour le suivi comptable.
@@ -72,10 +74,13 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - Le modèle `app/Models/Fleets/Insurance.php` est enrichi avec `contract_number`, `insurer_name`, `is_active`, et `notified_at`.
         - La commande `app/Console/Commands/Fleets/CheckFleetExpirationsCommand.php` vérifie les assurances expirant bientôt.
         - Elle envoie des notifications via `app/Notifications/Fleets/InsuranceExpiringNotification.php` aux utilisateurs concernés.
+    - **Gestion des Maintenances** :
+        - Le modèle `app/Models/Fleets/Maintenance.php` est enrichi avec `type` (via `app/Enums/Fleets/MaintenanceType.php`), `description`, `provider_name`, `mileage_at_maintenance`, `next_mileage`, et `notified_at`.
+        - La commande `app/Console/Commands/Fleets/CheckMaintenanceAlertsCommand.php` vérifie les maintenances à venir (par date ou kilométrage).
+        - Elle envoie des notifications via `app/Notifications/Fleets/MaintenanceAlertNotification.php` aux utilisateurs concernés.
     - **Assignation des Véhicules** :
         - La table `fleet_assignments` et le modèle `app/Models/Fleets/FleetAssignment.php` gèrent l'historique des assignations.
         - Les modèles `app/Models/Fleets/Fleet`, `app/Models/RH/Employee` et `app/Models/RH/Team` ont des relations polymorphiques (`MorphMany`, `MorphToMany`) pour gérer ces assignations.
-    - **Maintenance** : La structure de la table `maintenances` est prête (`database/migrations/2025_12_11...create_maintenances_table.php`) pour stocker l'historique et les coûts des entretiens.
 
 ---
 
@@ -121,10 +126,11 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Compta/Ulys | app/Services/Comptabilite/UlysComptaService.php | Service de comptabilisation des consommations Ulys, inclut `tier_id`. |
 | Compta/FEC | app/Jobs/Comptabilite/GenerateFecJob.php | Génération du Fichier des Écritures Comptables (FEC). |
 | Compta/Base | app/Models/Comptabilite/ComptaEntry.php | Modèle d'écriture comptable, inclut `tier_id` et relation `tier`. |
+| Compta/Reporting | app/Services/Comptabilite/ComptaReportingService.php | Service de récupération des données pour les journaux et le Grand Livre. |
 | RH/Paie | app/Enums/Paie/PayrollVariableType.php | Enum des variables de paie (Heures, Primes, Frais). |
 | Paie/Calcul | app/Services/Paie/PayrollCalculator.php | Service de calcul des fiches de paie (agrégation heures/frais). |
 | Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie. |
-| Paie/Job | app/Jobs/Paie/GeneratePayrollExportJob.php | Orchestre le calcul et l'export de paie. |
+| Paie/Job | app/Jobs/Paie/GeneratePayrollExportJob.php | Orchestre le calcul et l'export de paie, attache le CSV au `PayrollSlip`. |
 | Paie/Structure | database/migrations/2025_12_10...create_payroll_slips_table.php | Structure de la fiche de paie. |
 | Paie/Structure | database/migrations/2025_12_12...add_processed_at_to_payroll_slips_table.php | Ajout du champ `processed_at` au `PayrollSlip`. |
 | Flottes/Base | app/Models/Fleets/Fleet.php | Modèle principal de la flotte, enrichi avec détails et relations d'assignation. |
@@ -135,7 +141,12 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Flottes/Assurance | app/Models/Fleets/Insurance.php | Modèle d'assurance, enrichi avec détails et `notified_at`. |
 | Flottes/Alerte | app/Console/Commands/Fleets/CheckFleetExpirationsCommand.php | Commande de vérification des expirations d'assurance. |
 | Flottes/Alerte | app/Notifications/Fleets/InsuranceExpiringNotification.php | Notification d'expiration d'assurance. |
+| Flottes/Maintenance | app/Models/Fleets/Maintenance.php | Modèle de maintenance, enrichi avec détails et `notified_at`. |
+| Flottes/Maintenance | app/Enums/Fleets/MaintenanceType.php | Enum des types de maintenance. |
+| Flottes/Maintenance | app/Console/Commands/Fleets/CheckMaintenanceAlertsCommand.php | Commande de vérification des maintenances à venir. |
+| Flottes/Maintenance | app/Notifications/Fleets/MaintenanceAlertNotification.php | Notification d'alerte de maintenance. |
 | Flottes/Assignation | app/Models/Fleets/FleetAssignment.php | Modèle pour l'assignation polymorphique des véhicules. |
+| Flottes/Assignation | database/migrations/2025_12_12...create_fleet_assignments_table.php | Migration pour la table d'assignation des flottes. |
 | Flottes/Structure | database/migrations/2025_12_11...create_maintenances_table.php | Stocke les informations de suivi et coût des entretiens. |
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |

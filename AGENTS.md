@@ -33,9 +33,9 @@ A. MODULES TERMINÉS / STABLES (Production)
 B. MODULES EN COURS (Focus Actuel)
 
 | Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
-| Comptabilité | Avancé : Comptabilisation auto. des NDF et Ulys (ExpenseComptaService, UlysComptaService). Génération du FEC avec gestion des tiers (GenerateFecJob). | Finaliser les journaux (vente/achat/banque), Grand Livre. |
+| Comptabilité | Avancé : Comptabilisation auto. des NDF et Ulys (ExpenseComptaService, UlysComptaService). Génération du FEC avec gestion des tiers (GenerateFecJob). Reporting des journaux et Grand Livre (ComptaReportingService). | Finaliser les journaux (vente/achat/banque), Grand Livre. |
 | Paie | Avancé : Modèles de base prêts (PayrollPeriods, PayrollSlip, PayrollVariable), Enums (PayrollVariableType), Service de calcul (PayrollCalculator). Génération d'exports CSV (PayrollExportService, GeneratePayrollExportJob). | Finaliser l'export vers Silae/Sage. |
-| Flottes | Avancé : Gestion détaillée des véhicules (Fleet, FleetType). Gestion des assurances avec alertes (Insurance, CheckFleetExpirationsCommand, InsuranceExpiringNotification). Assignation des véhicules aux employés/équipes (FleetAssignment). | Gérer la Maintenance. |
+| Flottes | Avancé : Gestion détaillée des véhicules (Fleet, FleetType). Gestion des assurances avec alertes (Insurance, CheckFleetExpirationsCommand, InsuranceExpiringNotification). Assignation des véhicules aux employés/équipes (FleetAssignment). Gestion des maintenances avec alertes d'échéance (Maintenance, MaintenanceType, CheckMaintenanceAlertsCommand, MaintenanceAlertNotification). | |
 | GPAO | Nomenclature (Recette) faite. | Manque la gestion des Ordres de Fabrication (OF). |
 | 3D Vision | Coordonnées GPS prêtes. | Manque l'intégration du Viewer BIM/IFC. |
 
@@ -56,6 +56,7 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Compta/Ulys | app/Services/Comptabilite/UlysComptaService.php | Service de comptabilisation des consommations Ulys, inclut `tier_id`. |
 | Compta/FEC | app/Jobs/Comptabilite/GenerateFecJob.php | Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers. |
 | Compta/Base | app/Models/Comptabilite/ComptaEntry.php | Modèle d'écriture comptable, inclut `tier_id` et relation `tier`. |
+| Compta/Reporting | app/Services/Comptabilite/ComptaReportingService.php | Service de récupération des données pour les journaux et le Grand Livre. |
 | RH/Paie | app/Enums/Paie/PayrollVariableType.php | Enum des variables de paie (Heures, Primes, Frais). |
 | Paie/Calcul | app/Services/Paie/PayrollCalculator.php | Service de calcul des fiches de paie (agrégation heures/frais). |
 | Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie. |
@@ -70,11 +71,15 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Flottes/Assurance | app/Models/Fleets/Insurance.php | Modèle d'assurance, enrichi avec détails et `notified_at`. |
 | Flottes/Alerte | app/Console/Commands/Fleets/CheckFleetExpirationsCommand.php | Commande de vérification des expirations d'assurance. |
 | Flottes/Alerte | app/Notifications/Fleets/InsuranceExpiringNotification.php | Notification d'expiration d'assurance. |
+| Flottes/Maintenance | app/Models/Fleets/Maintenance.php | Modèle de maintenance, enrichi avec détails et `notified_at`. |
+| Flottes/Maintenance | app/Enums/Fleets/MaintenanceType.php | Enum des types de maintenance. |
+| Flottes/Maintenance | app/Console/Commands/Fleets/CheckMaintenanceAlertsCommand.php | Commande de vérification des maintenances à venir. |
+| Flottes/Maintenance | app/Notifications/Fleets/MaintenanceAlertNotification.php | Notification d'alerte de maintenance. |
 | Flottes/Assignation | app/Models/Fleets/FleetAssignment.php | Modèle pour l'assignation polymorphique des véhicules. |
+| Flottes/Assignation | database/migrations/2025_12_12...create_fleet_assignments_table.php | Migration pour la table d'assignation des flottes. |
 | Flottes/Structure | database/migrations/2025_12_11...create_maintenances_table.php | Stocke les informations de suivi et coût des entretiens. |
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
-| Flottes/Assignation | database/migrations/2025_12_12...create_fleet_assignments_table.php | Migration pour la table d'assignation des flottes. |
 
 4. RÔLES UTILISATEURS (AGENTS)
 

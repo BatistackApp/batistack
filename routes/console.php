@@ -49,6 +49,13 @@ Schedule::command("fleet:sync-ulys-consumptions")
     ->sendOutputTo(storage_path('logs/schedule/sync-ulys-consumptions.log'))
     ->description("Synchronise les consommations de télépéage Ulys pour les flottes configurées.");
 
+Schedule::command('fleet:check-maintenance-alerts')
+    ->daily()
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/fleet-check-maintenance-alerts.log'))
+    ->description("Synchronise les maintenance pour les flottes");
+
 Schedule::command("compta:check-integrity")
     ->daily()
     ->onOneServer()
