@@ -37,30 +37,59 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 ---
 
+### Module : Commerce / Facturation (Ventes & Achats)
+
+- **Description Fonctionnelle** : Gestion des documents de vente (devis, factures) et des documents d'achat (factures fournisseurs).
+- **Implémentation Technique** :
+    - **Documents de Vente (`SalesDocument`)** :
+        - **Modèle Principal** : `app/Models/Facturation/SalesDocument.php`.
+        - **Statuts** : `app/Enums/Facturation/SalesDocumentStatus.php`.
+        - **Automatisation (Comptabilisation)** :
+            1.  L'observer `app/Observers/Facturation/SalesDocumentObserver.php` surveille les changements de statut.
+            2.  Lorsque le statut d'une facture (`SalesDocumentType::Invoice`) passe à `Sent` ou `Paid`, il déclenche le service `app/Services/Comptabilite/SalesDocumentComptaService.php`.
+            3.  Ce service crée les écritures comptables correspondantes (débit client, crédit vente, crédit TVA collectée) dans `compta_entries`.
+    - **Documents d'Achat (`PurchaseDocument`)** :
+        - **Modèle Principal** : `app/Models/Facturation/PurchaseDocument.php`. Gère les factures reçues des fournisseurs.
+        - **Statuts** : `app/Enums/Facturation/PurchaseDocumentStatus.php`.
+        - **Automatisation (Comptabilisation)** :
+            1.  L'observer `app/Observers/Facturation/PurchaseDocumentObserver.php` surveille les changements de statut.
+            2.  Lorsque le statut d'une facture fournisseur passe à `Approved` ou `Paid`, il déclenche le service `app/Services/Comptabilite/PurchaseDocumentComptaService.php`.
+            3.  Ce service crée les écritures comptables correspondantes (débit charge, débit TVA déductible, crédit fournisseur) dans `compta_entries`.
+
+---
+
 ### Module : Banque & Paiements
 
 - **Description Fonctionnelle** : Gestion des comptes bancaires, synchronisation des transactions et rapprochement.
 - **Implémentation Technique** :
-    - **Synchronisation Externe** : Un service (probablement `app/Services/Bridge/BridgeService.php`) est utilisé pour communiquer avec l'API BridgeAPI et importer les transactions bancaires. Ce processus est déclenché via une commande ou un Job.
-    - **Rapprochement Automatique** : Un Job (tâche en arrière-plan) est responsable de comparer les transactions bancaires importées avec les factures et paiements internes pour les rapprocher.
+    - **Synchronisation Externe** : Le Job `app/Jobs/Banque/SyncBridgeTransactionJob.php` utilise un service (ex: `app/Services/Bridge/BridgeService.php`) pour communiquer avec l'API BridgeAPI et importer les transactions bancaires dans `app/Models/Banque/BankTransaction.php`.
+    - **Rapprochement Automatique** : Le Job `app/Jobs/Banque/AutoReconcileTransactionJob.php` est déclenché après l'importation pour rapprocher les transactions bancaires avec les paiements internes.
+    - **Automatisation (Comptabilisation)** :
+        1.  L'observer `app/Observers/Banque/BankTransactionObserver.php` surveille la création de nouvelles transactions importées.
+        2.  Il déclenche le service `app/Services/Comptabilite/BankTransactionComptaService.php`.
+        3.  Ce service crée les écritures comptables pour la transaction bancaire (mouvement sur le compte bancaire et contrepartie sur un compte d'attente) dans `compta_entries`.
     - **Mise à jour des Soldes** : Un observer sur le modèle `Payment` met à jour le solde du `BankAccount` associé chaque fois qu'un paiement est marqué comme `cleared` (compensé) ou si un paiement est supprimé.
 
 ---
 
 ### Module : Comptabilité
 
-- **Description Fonctionnelle** : Centralisation des écritures comptables, génération des journaux et exports légaux (FEC).
+- **Description Fonctionnelle** : Centralisation des écritures comptables, génération des journaux, exports légaux (FEC) et rapports comptables.
 - **Implémentation Technique** :
-    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `Invoice`). Il inclut désormais un `tier_id` pour l'association directe avec un `Tiers`.
-    - **Services de Comptabilisation** : La logique est déportée dans des services spécialisés.
-        - `app/Services/Comptabilite/ExpenseComptaService.php` : Gère la comptabilisation des notes de frais, incluant l'association du `tier_id`.
-        - `app/Services/Comptabilite/UlysComptaService.php` : Gère la comptabilisation des dépenses de flotte Ulys, incluant l'association du `tier_id`.
+    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `SalesDocument`, une `PurchaseDocument`, une `BankTransaction`). Il inclut un `tier_id` pour l'association directe avec un `Tiers`.
+    - **Services de Comptabilisation** : La logique est déportée dans des services spécialisés :
+        - `app/Services/Comptabilite/ExpenseComptaService.php` : Gère la comptabilisation des notes de frais.
+        - `app/Services/Comptabilite/UlysComptaService.php` : Gère la comptabilisation des dépenses de flotte Ulys.
+        - `app/Services/Comptabilite/SalesDocumentComptaService.php` : Gère la comptabilisation des documents de vente.
+        - `app/Services/Comptabilite/PurchaseDocumentComptaService.php` : Gère la comptabilisation des documents d'achat.
+        - `app/Services/Comptabilite/BankTransactionComptaService.php` : Gère la comptabilisation des transactions bancaires.
     - **Export FEC** :
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
         - Il remplit les champs `CompAuxNum` et `CompAuxLib` avec les informations du `Tiers` associé à l'écriture.
     - **Reporting Comptable** :
         - Le service `app/Services/Comptabilite/ComptaReportingService.php` fournit des méthodes pour récupérer les écritures par journal (`getJournalEntries`) ou par compte (`getGeneralLedgerEntries`), et calculer les soldes (`getAccountBalanceAtDate`).
+        - **Génération de Rapports Automatisée** : La commande `app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php` utilise ce service pour générer des fichiers CSV pour les journaux et le Grand Livre pour une période donnée. Cette commande est planifiée pour s'exécuter régulièrement (ex: mensuellement) via `routes/console.php`.
 
 ---
 
@@ -79,7 +108,12 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - La commande `app/Console/Commands/Fleets/CheckMaintenanceAlertsCommand.php` vérifie les maintenances à venir (par date ou kilométrage).
         - Elle envoie des notifications via `app/Notifications/Fleets/MaintenanceAlertNotification.php` aux utilisateurs concernés.
     - **Assignation des Véhicules** :
-        - La table `fleet_assignments` et le modèle `app/Models/Fleets/FleetAssignment.php` gèrent l'historique des assignations.
+        - **Modèle Principal** : `app/Models/Fleets/FleetAssignment.php` gère l'historique des assignations, incluant `start_date`, `end_date`, `status` (via `app/Enums/Fleets/FleetAssignmentStatus.php`) et `notified_at`.
+        - **Statuts** : `app/Enums/Fleets/FleetAssignmentStatus.php` pour suivre l'état de l'assignation (Planifiée, Active, Terminée, Annulée).
+        - **Automatisation (Mise à jour du statut)** : L'observer `app/Observers/Fleets/FleetAssignmentObserver.php` met à jour automatiquement le `status` de l'assignation en fonction des dates de début et de fin.
+        - **Automatisation (Notifications)** :
+            1.  L'observer `app/Observers/Fleets/FleetAssignmentObserver.php` envoie des notifications (`app/Notifications/Fleets/FleetAssignedNotification.php`) lors de la création, mise à jour ou suppression d'une assignation.
+            2.  La commande `app/Console/Commands/Fleets/CheckFleetAssignmentRemindersCommand.php` vérifie quotidiennement les assignations dont la fin approche et envoie des rappels (`app/Notifications/Fleets/FleetAssignmentReminderNotification.php`) aux entités assignées. Cette commande est planifiée via `routes/console.php`.
         - Les modèles `app/Models/Fleets/Fleet`, `app/Models/RH/Employee` et `app/Models/RH/Team` ont des relations polymorphiques (`MorphMany`, `MorphToMany`) pour gérer ces assignations.
 
 ---
@@ -92,7 +126,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
     - **Variables de Paie** : L'Enum `app/Enums/Paie/PayrollVariableType.php` est utilisé pour standardiser les différents types d'éléments de paie.
     - **Structure** : Les modèles `PayrollPeriods`, `PayrollSlip`, et `PayrollVariable` forment la structure de base pour stocker les données de paie. Le modèle `PayrollSlip` implémente `HasMedia` et inclut un champ `processed_at`.
     - **Export de Paie** :
-        - Le service `app/Services/Paie/PayrollExportService.php` génère un fichier CSV à partir des `PayrollVariable` d'un `PayrollSlip`.
+        - Le service `app/Services/Paie/PayrollExportService.php` génère un fichier CSV à partir des `PayrollVariable` d'un `PayrollSlip`. Il supporte différents formats d'export (générique, Silae, Sage) via l'Enum `app/Enums/Paie/PayrollExportFormat.php`, avec une logique affinée pour les spécificités de Silae et Sage.
         - Le Job `app/Jobs/Paie/GeneratePayrollExportJob.php` orchestre le calcul via `PayrollCalculator` et l'export via `PayrollExportService`, puis attache le fichier CSV généré au `PayrollSlip` via Spatie Media Library.
 
 ---
@@ -127,9 +161,23 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Compta/FEC | app/Jobs/Comptabilite/GenerateFecJob.php | Génération du Fichier des Écritures Comptables (FEC). |
 | Compta/Base | app/Models/Comptabilite/ComptaEntry.php | Modèle d'écriture comptable, inclut `tier_id` et relation `tier`. |
 | Compta/Reporting | app/Services/Comptabilite/ComptaReportingService.php | Service de récupération des données pour les journaux et le Grand Livre. |
+| Compta/Rapports | app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php | Commande Artisan pour générer les rapports comptables (journaux, grand livre) en CSV. Planifiée via `routes/console.php`. |
+| Facturation/Vente | app/Models/Facturation/SalesDocument.php | Modèle principal des documents de vente. |
+| Facturation/Vente | app/Enums/Facturation/SalesDocumentStatus.php | Enum des statuts des documents de vente. |
+| Facturation/Vente | app/Services/Comptabilite/SalesDocumentComptaService.php | Service de comptabilisation des documents de vente. |
+| Facturation/Vente | app/Observers/Facturation/SalesDocumentObserver.php | Déclenche la comptabilisation des documents de vente. |
+| Facturation/Achat | database/migrations/2024_01_01_000000_create_purchase_documents_table.php | Migration pour la table des documents d'achat. |
+| Facturation/Achat | app/Models/Facturation/PurchaseDocument.php | Modèle principal des documents d'achat (factures fournisseurs). |
+| Facturation/Achat | app/Enums/Facturation/PurchaseDocumentStatus.php | Enum des statuts des documents d'achat. |
+| Facturation/Achat | app/Services/Comptabilite/PurchaseDocumentComptaService.php | Service de comptabilisation des documents d'achat. |
+| Facturation/Achat | app/Observers/Facturation/PurchaseDocumentObserver.php | Déclenche la comptabilisation des documents d'achat. |
+| Banque/Transactions | app/Models/Banque/BankTransaction.php | Modèle des transactions bancaires importées. |
+| Banque/Transactions | app/Services/Comptabilite/BankTransactionComptaService.php | Service de comptabilisation des transactions bancaires. |
+| Banque/Transactions | app/Observers/Banque/BankTransactionObserver.php | Déclenche la comptabilisation des transactions bancaires. |
 | RH/Paie | app/Enums/Paie/PayrollVariableType.php | Enum des variables de paie (Heures, Primes, Frais). |
 | Paie/Calcul | app/Services/Paie/PayrollCalculator.php | Service de calcul des fiches de paie (agrégation heures/frais). |
-| Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie. |
+| Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie, avec logique Silae/Sage affinée. |
+| Paie/Export | app/Enums/Paie/PayrollExportFormat.php | Enum des formats d'export de paie (Silae, Sage, GenericCSV). |
 | Paie/Job | app/Jobs/Paie/GeneratePayrollExportJob.php | Orchestre le calcul et l'export de paie, attache le CSV au `PayrollSlip`. |
 | Paie/Structure | database/migrations/2025_12_10...create_payroll_slips_table.php | Structure de la fiche de paie. |
 | Paie/Structure | database/migrations/2025_12_12...add_processed_at_to_payroll_slips_table.php | Ajout du champ `processed_at` au `PayrollSlip`. |
@@ -145,8 +193,15 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Flottes/Maintenance | app/Enums/Fleets/MaintenanceType.php | Enum des types de maintenance. |
 | Flottes/Maintenance | app/Console/Commands/Fleets/CheckMaintenanceAlertsCommand.php | Commande de vérification des maintenances à venir. |
 | Flottes/Maintenance | app/Notifications/Fleets/MaintenanceAlertNotification.php | Notification d'alerte de maintenance. |
-| Flottes/Assignation | app/Models/Fleets/FleetAssignment.php | Modèle pour l'assignation polymorphique des véhicules. |
-| Flottes/Assignation | database/migrations/2025_12_12...create_fleet_assignments_table.php | Migration pour la table d'assignation des flottes. |
+| Flottes/Assignation | app/Models/Fleets/FleetAssignment.php | Modèle pour l'assignation polymorphique des véhicules, incluant `status` et `notified_at`. |
+| Flottes/Assignation | app/Enums/Fleets/FleetAssignmentStatus.php | Enum des statuts d'assignation de flotte. |
+| Flottes/Assignation | database/migrations/2025_12_12_170000_create_fleet_assignments_table.php | Migration pour la table d'assignation des flottes. |
+| Flottes/Assignation | database/migrations/2025_12_12_170001_add_status_and_notified_at_to_fleet_assignments_table.php | Migration pour ajouter les champs `status` et `notified_at` aux assignations de flotte. |
+| Flottes/Assignation | app/Observers/Fleets/FleetAssignmentObserver.php | Gère la mise à jour du statut et l'envoi de notifications pour les assignations de flotte. |
+| Flottes/Assignation | app/Notifications/Fleets/FleetAssignedNotification.php | Notification d'assignation de flotte (création, mise à jour, suppression). |
+| Flottes/Assignation | app/Notifications/Fleets/FleetAssignmentReminderNotification.php | Notification de rappel de fin d'assignation de flotte. |
+| Flottes/Assignation | app/Console/Commands/Fleets/CheckFleetAssignmentRemindersCommand.php | Commande de vérification et d'envoi des rappels de fin d'assignation de flotte. Planifiée via `routes/console.php`. |
 | Flottes/Structure | database/migrations/2025_12_11...create_maintenances_table.php | Stocke les informations de suivi et coût des entretiens. |
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
+| Core/Scheduling | routes/console.php | Fichier de planification des commandes Artisan (Laravel 12+). |

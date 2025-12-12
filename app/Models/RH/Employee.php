@@ -13,10 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Notifications\Notifiable; // Import the Notifiable trait
 
 class Employee extends Model
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory, BelongsToCompany, Notifiable; // Add Notifiable trait
 
     protected $guarded = [];
 
@@ -54,5 +55,13 @@ class Employee extends Model
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    /**
+     * Route notifications for the mail channel.
+     */
+    public function routeNotificationForMail(): string
+    {
+        return $this->user->email; // Assuming each employee has a linked user with an email
     }
 }

@@ -56,12 +56,26 @@ Schedule::command('fleet:check-maintenance-alerts')
     ->sendOutputTo(storage_path('logs/schedule/fleet-check-maintenance-alerts.log'))
     ->description("Synchronise les maintenance pour les flottes");
 
+Schedule::command('fleet:check-assignment-reminders')
+    ->dailyAt('09:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/fleet-check-assignment-reminders.log'))
+    ->description("Vérifie les assignations de flotte dont la fin approche et envoie des rappels.");
+
 Schedule::command("compta:check-integrity")
     ->daily()
     ->onOneServer()
     ->withoutOverlapping()
     ->sendOutputTo(storage_path('logs/schedule/compta-check-integrity.log'))
     ->description("Vérifie que la comptabilité est équilibrée (Débit = Crédit) pour chaque entreprise.");
+
+Schedule::command('compta:generate-reports')
+    ->monthlyOn(1, '03:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/compta-generate-reports.log'))
+    ->description("Génère le rapport comptable pour toutes les companie.");
 
 Schedule::job(new \App\Jobs\Comptabilite\PostRecurringEntriesJob())
     ->dailyAt('04:00')

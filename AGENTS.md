@@ -34,7 +34,7 @@ B. MODULES EN COURS (Focus Actuel)
 
 | Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
 | Comptabilité | Avancé : Comptabilisation auto. des NDF et Ulys (ExpenseComptaService, UlysComptaService). Génération du FEC avec gestion des tiers (GenerateFecJob). Reporting des journaux et Grand Livre (ComptaReportingService). | Finaliser les journaux (vente/achat/banque), Grand Livre. |
-| Paie | Avancé : Modèles de base prêts (PayrollPeriods, PayrollSlip, PayrollVariable), Enums (PayrollVariableType), Service de calcul (PayrollCalculator). Génération d'exports CSV (PayrollExportService, GeneratePayrollExportJob). | Finaliser l'export vers Silae/Sage. |
+| Paie | Avancé : Modèles de base prêts (PayrollPeriods, PayrollSlip, PayrollVariable), Enums (PayrollVariableType), Service de calcul (PayrollCalculator). Génération d'exports CSV (PayrollExportService, GeneratePayrollExportJob) avec support de différents formats (PayrollExportFormat). | Finaliser l'export vers Silae/Sage. |
 | Flottes | Avancé : Gestion détaillée des véhicules (Fleet, FleetType). Gestion des assurances avec alertes (Insurance, CheckFleetExpirationsCommand, InsuranceExpiringNotification). Assignation des véhicules aux employés/équipes (FleetAssignment). Gestion des maintenances avec alertes d'échéance (Maintenance, MaintenanceType, CheckMaintenanceAlertsCommand, MaintenanceAlertNotification). | |
 | GPAO | Nomenclature (Recette) faite. | Manque la gestion des Ordres de Fabrication (OF). |
 | 3D Vision | Coordonnées GPS prêtes. | Manque l'intégration du Viewer BIM/IFC. |
@@ -60,6 +60,7 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | RH/Paie | app/Enums/Paie/PayrollVariableType.php | Enum des variables de paie (Heures, Primes, Frais). |
 | Paie/Calcul | app/Services/Paie/PayrollCalculator.php | Service de calcul des fiches de paie (agrégation heures/frais). |
 | Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie. |
+| Paie/Export | app/Enums/Paie/PayrollExportFormat.php | Enum des formats d'export de paie (Silae, Sage, GenericCSV). |
 | Paie/Job | app/Jobs/Paie/GeneratePayrollExportJob.php | Orchestre le calcul et l'export de paie, attache le CSV au `PayrollSlip`. |
 | Paie/Structure | database/migrations/2025_12_10...create_payroll_slips_table.php | Structure de la fiche de paie. |
 | Paie/Structure | database/migrations/2025_12_12...add_processed_at_to_payroll_slips_table.php | Ajout du champ `processed_at` au `PayrollSlip`. |

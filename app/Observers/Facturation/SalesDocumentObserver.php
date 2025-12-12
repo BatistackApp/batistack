@@ -6,6 +6,8 @@ use App\Enums\Facturation\SalesDocumentStatus;
 use App\Enums\Facturation\SalesDocumentType;
 use App\Models\Facturation\SalesDocument;
 use App\Notifications\Facturation\InvoiceOverdueNotification;
+use App\Services\Comptabilite\SalesDocumentComptaService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 class SalesDocumentObserver
@@ -64,6 +66,32 @@ class SalesDocumentObserver
             $admins = $document->company->users;
 
             Notification::send($admins, new InvoiceOverdueNotification($document));
+        }
+    }
+
+    /**
+     * Handle the SalesDocument "saved" event.
+     * This event is fired after a model is created or updated.
+     */
+    public function saved(SalesDocument $document): void
+    {
+        // Comptabilisation des factures
+        if ($document->type === SalesDocumentType::Invoice && $document->isDirty('status')) {
+            $originalStatus = $document->getOriginal('status');
+            $newStatus = $document->status;
+
+            // Si la facture passe de n'importe quel statut à "Envoyé" ou "Payé"
+            // et qu'elle n'a pas déjà été comptabilisée (le service gère la vérification)
+            if (in_array($newStatus, [SalesDocumentStatus::Sent, SalesDocumentStatus::Paid])) {
+                try {
+                    $comptaService = new SalesDocumentComptaService();
+                    $comptaService->postSalesDocumentEntry($document);
+                    Log::info("Facture {$document->reference} comptabilisée avec succès.");
+                } catch (\Exception $e) {
+                    Log::error("Erreur lors de la comptabilisation de la facture {$document->reference}: " . $e->getMessage());
+                    // Optionnel: Notifier l'administrateur ou l'utilisateur de l'échec
+                }
+            }
         }
     }
 }
