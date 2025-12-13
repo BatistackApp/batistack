@@ -16,7 +16,7 @@ class ProductionOrderNotification extends Notification
      */
     public function __construct(
         public ProductionOrder $productionOrder,
-        public string $type = 'created' // 'created', 'updated', 'status_changed'
+        public string $type = 'created' // 'created', 'updated', 'status_changed', 'delayed'
     ) {}
 
     /**
@@ -50,6 +50,10 @@ class ProductionOrderNotification extends Notification
             case 'status_changed':
                 $subject = "Statut de l'Ordre de Fabrication {$this->productionOrder->reference} mis à jour";
                 $line = "Le statut de l'Ordre de Fabrication **{$this->productionOrder->reference}** pour le produit **{$this->productionOrder->product->name}** est passé à **{$this->productionOrder->status->getLabel()}**.";
+                break;
+            case 'delayed':
+                $subject = "Alerte de retard : Ordre de Fabrication {$this->productionOrder->reference}";
+                $line = "L'Ordre de Fabrication **{$this->productionOrder->reference}** pour le produit **{$this->productionOrder->product->name}** est en retard. La date de fin planifiée était le **{$this->productionOrder->planned_end_date->format('d/m/Y')}**.";
                 break;
             default:
                 $subject = "Information concernant un Ordre de Fabrication";

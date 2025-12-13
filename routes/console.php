@@ -63,6 +63,13 @@ Schedule::command('fleet:check-assignment-reminders')
     ->sendOutputTo(storage_path('logs/schedule/fleet-check-assignment-reminders.log'))
     ->description("Vérifie les assignations de flotte dont la fin approche et envoie des rappels.");
 
+Schedule::command('gpao:check-delays')
+    ->dailyAt('09:30')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/gpao-check-delays.log'))
+    ->description("Vérifie les ordres de fabrication en cours et alerte en cas de retard.");
+
 Schedule::command("compta:check-integrity")
     ->daily()
     ->onOneServer()

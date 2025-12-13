@@ -2,9 +2,12 @@
 
 namespace App\Observers\Facturation;
 
+use App\Enums\Articles\ProductType;
 use App\Enums\Facturation\SalesDocumentStatus;
 use App\Enums\Facturation\SalesDocumentType;
+use App\Enums\GPAO\ProductionOrderStatus;
 use App\Models\Facturation\SalesDocument;
+use App\Models\GPAO\ProductionOrder;
 use App\Notifications\Facturation\InvoiceOverdueNotification;
 use App\Services\Comptabilite\SalesDocumentComptaService;
 use Illuminate\Support\Facades\Log;
@@ -90,6 +93,45 @@ class SalesDocumentObserver
                 } catch (\Exception $e) {
                     Log::error("Erreur lors de la comptabilisation de la facture {$document->reference}: " . $e->getMessage());
                     // Optionnel: Notifier l'administrateur ou l'utilisateur de l'échec
+                }
+            }
+        }
+
+        // Création des Ordres de Fabrication à partir d'un devis accepté
+        if ($document->type === SalesDocumentType::Quote && $document->isDirty('status') && $document->status === SalesDocumentStatus::Accepted) {
+            $this->createProductionOrdersFromQuote($document);
+        }
+    }
+
+    /**
+     * Crée les ordres de fabrication nécessaires à partir d'un devis accepté.
+     */
+    private function createProductionOrdersFromQuote(SalesDocument $quote): void
+    {
+        foreach ($quote->lines as $line) {
+            // On ne traite que les produits de type "Ouvrage" (Assembly)
+            if ($line->product->type === ProductType::Assembly) {
+                $product = $line->product;
+                $quantityToProduce = $line->quantity;
+                $currentStock = $product->total_stock;
+
+                // Si le stock est insuffisant
+                if ($currentStock < $quantityToProduce) {
+                    $missingQuantity = $quantityToProduce - $currentStock;
+
+                    // Créer un Ordre de Fabrication pour la quantité manquante
+                    ProductionOrder::create([
+                        'company_id' => $quote->company_id,
+                        'sales_document_line_id' => $line->id,
+                        'product_id' => $product->id,
+                        'quantity' => $missingQuantity,
+                        'status' => ProductionOrderStatus::Planned,
+                        'planned_start_date' => now(), // TODO: Améliorer la logique de planification
+                        'planned_end_date' => now()->addDays(7), // TODO: Améliorer la logique de planification
+                        'notes' => "Généré automatiquement à partir du devis {$quote->reference}",
+                    ]);
+
+                    Log::info("OF créé pour {$missingQuantity} de {$product->name} à partir du devis {$quote->reference}.");
                 }
             }
         }

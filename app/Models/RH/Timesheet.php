@@ -6,6 +6,7 @@ use App\Enums\RH\TimesheetType;
 use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
 use App\Models\Fleets\Fleet;
+use App\Models\GPAO\ProductionOrder;
 use App\Observers\RH\TimesheetObserver;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -28,6 +29,11 @@ class Timesheet extends Model
     public function chantier(): BelongsTo
     {
         return $this->belongsTo(Chantiers::class);
+    }
+
+    public function productionOrder(): BelongsTo
+    {
+        return $this->belongsTo(ProductionOrder::class);
     }
 
     public function fleet(): BelongsTo
