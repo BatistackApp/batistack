@@ -5,6 +5,7 @@ namespace App\Models\GPAO;
 use App\Enums\GPAO\ProductionOrderStatus;
 use App\Models\Articles\Product;
 use App\Models\Core\Company;
+use App\Models\Facturation\SalesDocumentLine;
 use App\Models\RH\Timesheet;
 use App\Observers\GPAO\ProductionOrderObserver;
 use App\Trait\BelongsToCompany;
@@ -45,6 +46,11 @@ class ProductionOrder extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function salesDocumentLine(): BelongsTo
+    {
+        return $this->belongsTo(SalesDocumentLine::class);
     }
 
     public function assignedTo(): MorphTo
