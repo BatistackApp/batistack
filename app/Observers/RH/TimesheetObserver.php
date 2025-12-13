@@ -4,6 +4,7 @@ namespace App\Observers\RH;
 
 use App\Enums\RH\TimesheetType;
 use App\Models\Chantiers\Chantiers;
+use App\Models\GPAO\ProductionOrder;
 use App\Models\RH\Timesheet;
 use DB;
 
@@ -27,16 +28,25 @@ class TimesheetObserver
             $timesheet->lunch_basket = false;
             $timesheet->travel_zone = false;
         }
+
+        // Règle Métier 3 : Un pointage ne peut être lié qu'à un chantier OU un OF, pas les deux
+        if ($timesheet->chantiers_id && $timesheet->production_order_id) {
+            throw new \Exception('Un pointage ne peut pas être lié à la fois à un chantier et à un ordre de fabrication.');
+        }
     }
 
     public function saved(Timesheet $timesheet): void
     {
         // Recalcul du coût après sauvegarde
         $this->updateChantiersLaborCost($timesheet->chantiers_id);
+        $this->updateProductionOrderLaborCost($timesheet->production_order_id);
 
         // Si on a changé de projet, il faut recalculer l'ancien aussi !
-        if ($timesheet->wasChanged('project_id')) {
+        if ($timesheet->wasChanged('chantiers_id')) {
             $this->updateChantiersLaborCost($timesheet->getOriginal('chantiers_id'));
+        }
+        if ($timesheet->wasChanged('production_order_id')) {
+            $this->updateProductionOrderLaborCost($timesheet->getOriginal('production_order_id'));
         }
 
         // --- NOUVEAU : Mise à jour du Kilométrage/Compteur d'heures de la Flotte ---
@@ -62,27 +72,56 @@ class TimesheetObserver
     public function deleted(Timesheet $timesheet): void
     {
         $this->updateChantiersLaborCost($timesheet->chantiers_id);
+        $this->updateProductionOrderLaborCost($timesheet->production_order_id);
     }
 
     /**
      * Méthode privée pour recalculer le coût global d'un chantier.
-     * Appelée à chaque ajout/modif/suppression d'heure.
      */
     private function updateChantiersLaborCost(?int $chantiersId): void
     {
         if (!$chantiersId) return;
 
-        // On fait une somme pondérée : Heures * Coût Horaire de l'employé à l'instant T
-        // Note : Pour être puriste, on devrait historiser le coût horaire de l'employé,
-        // mais pour une V1, utiliser le coût actuel de la fiche employé est standard.
-
-        $totalCost = DB::table('timesheets')
-            ->join('employees', 'timesheets.employee_id', '=', 'employees.id')
-            ->where('timesheets.chantiers_id', $chantiersId)
-            ->where('timesheets.type', TimesheetType::Work->value) // On ne compte que le travail effectif (pas les trajets/absences)
-            ->sum(DB::raw('timesheets.hours * employees.hourly_cost'));
-
-        // Mise à jour silencieuse (pour ne pas déclencher l'observer Project)
+        $totalCost = $this->calculateLaborCost('chantiers_id', $chantiersId);
         Chantiers::where('id', $chantiersId)->update(['total_labor_cost' => $totalCost]);
+    }
+
+    /**
+     * Méthode privée pour recalculer le coût global d'un ordre de fabrication.
+     */
+    private function updateProductionOrderLaborCost(?int $productionOrderId): void
+    {
+        if (!$productionOrderId) return;
+
+        $totalCost = $this->calculateLaborCost('production_order_id', $productionOrderId);
+        ProductionOrder::where('id', $productionOrderId)->update(['total_labor_cost' => $totalCost]);
+    }
+
+    /**
+     * Calcule le coût de la main-d'œuvre pour une entité donnée (chantier ou OF).
+     */
+    private function calculateLaborCost(string $foreignKey, int $id): float
+    {
+        $costMultipliers = [
+            TimesheetType::Work->value => 1.0,
+            TimesheetType::Travel->value => 1.0,
+            TimesheetType::Overtime25->value => 1.25,
+            TimesheetType::Overtime50->value => 1.50,
+            TimesheetType::NightHour->value => 1.25,
+            TimesheetType::SundayHour->value => 1.50,
+        ];
+
+        $totalCost = 0;
+
+        foreach ($costMultipliers as $typeValue => $multiplier) {
+            $costForType = DB::table('timesheets')
+                ->join('employees', 'timesheets.employee_id', '=', 'employees.id')
+                ->where("timesheets.{$foreignKey}", $id)
+                ->where('timesheets.type', $typeValue)
+                ->sum(DB::raw("timesheets.hours * employees.hourly_cost * {$multiplier}"));
+            $totalCost += $costForType;
+        }
+
+        return $totalCost;
     }
 }

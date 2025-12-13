@@ -9,7 +9,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Saisie des heures des employés et calcul du coût de la main-d'œuvre pour les chantiers.
 - **Implémentation Technique** :
     - **Modèle Principal** : `app/Models/RH/Timesheet.php`. Ce modèle est central et contient la logique de calcul du coût (`cost`) d'une session de travail.
-    - **Types d'Heures** : Utilise l'Enum `app/Enums/RH/TimesheetType.php` pour catégoriser les types de pointage (Travail, Trajet, Absence, Formation).
+    - **Types d'Heures** : Utilise l'Enum `app/Enums/RH/TimesheetType.php` pour catégoriser les types de pointage (Travail, Trajet, Absence, Formation, **Heures Supplémentaires 25% et 50%, Heures de Nuit, Heures du Dimanche**).
     - **Automatisation (Pointages Manquants)** : Une tâche planifiée (cron) exécute la commande `app/Console/Commands/CheckMissingTimesheetsCommand.php`. Cette commande identifie les employés n'ayant pas rempli leurs heures et leur envoie une notification via `app/Notifications/MissingTimesheetNotification.php`.
 
 ---
@@ -18,7 +18,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Gestion des projets, de leurs coûts et de leur localisation.
 - **Implémentation Technique** :
-    - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé.
+    - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé, **en prenant en compte les majorations pour les heures supplémentaires, de nuit et du dimanche**.
     - **Géocodage** : Une automatisation (probablement un observer sur le modèle `Chantier`) convertit l'adresse d'un chantier en coordonnées GPS lors de sa création ou modification.
 
 ---
@@ -122,12 +122,12 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Préparation, calcul et export des fiches de paie.
 - **Implémentation Technique** :
-    - **Service de Calcul** : Le service `app/Services/Paie/PayrollCalculator.php` est le moteur principal. Il collecte les heures (`Timesheet`) et les frais (`Expense`) pour une période donnée, les agrège et crée des `PayrollVariable` pour un `PayrollSlip`.
+    - **Service de Calcul** : Le service `app/Services/Paie/PayrollCalculator.php` est le moteur principal. Il collecte les heures (`Timesheet`) et les frais (`Expense`) pour une période donnée, les agrège et crée des `PayrollVariable` pour un `PayrollSlip`. **Il inclut désormais la gestion des différents types d'heures majorées (supplémentaires, nuit, dimanche) pour le calcul.**
     - **Variables de Paie** : L'Enum `app/Enums/Paie/PayrollVariableType.php` est utilisé pour standardiser les différents types d'éléments de paie.
     - **Structure** : Les modèles `PayrollPeriods`, `PayrollSlip`, et `PayrollVariable` forment la structure de base pour stocker les données de paie. Le modèle `PayrollSlip` implémente `HasMedia` et inclut un champ `processed_at`.
     - **Export de Paie** :
         - Le service `app/Services/Paie/PayrollExportService.php` génère un fichier CSV à partir des `PayrollVariable` d'un `PayrollSlip`. Il supporte différents formats d'export (générique, Silae, Sage) via l'Enum `app/Enums/Paie/PayrollExportFormat.php`, avec une logique affinée pour les spécificités de Silae et Sage.
-        - Le Job `app/Jobs/Paie/GeneratePayrollExportJob.php` orchestre le calcul via `PayrollCalculator` et l'export via `PayrollExportService`, puis attache le fichier CSV généré au `PayrollSlip` via Spatie Media Library.
+        - Le Job `app/Jobs/Paie/GeneratePayrollExportJob.php` orchestre le calcul via `PayrollCalculator` et l'export via `PayrollExportService`, puis attache le fichier CSV généré au `PayrollSlip` via Spatie Media Library. **Il marque également les notes de frais comme remboursées après le traitement du bulletin de paie.**
 
 ---
 
@@ -136,7 +136,14 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Gestion des Ordres de Fabrication (OF) et de la nomenclature (recettes).
 - **Implémentation Technique** :
     - **Nomenclature** : La gestion des "recettes" (assemblages de produits) est en place.
-    - **Ordres de Fabrication** : Le développement des modèles et de la logique pour les OF est à faire.
+    - **Ordres de Fabrication** :
+        - **Modèle Principal** : `app/Models/GPAO/ProductionOrder.php` pour gérer les ordres de fabrication, **incluant les champs de planification (`assigned_to`, `planned_start_date`, `planned_end_date`) et de suivi (`actual_start_date`, `actual_end_date`)**.
+        - **Statuts** : `app/Enums/GPAO/ProductionOrderStatus.php` pour suivre l'état de l'OF (Brouillon, Planifié, En cours, Terminé, Annulé).
+        - **Automatisation (Création à partir des commandes)** : L'observer `app/Observers/Facturation/SalesDocumentObserver.php` crée automatiquement un OF si le stock est insuffisant lors de la validation d'un devis.
+        - **Automatisation (Mise à jour des stocks)** : L'observer `app/Observers/GPAO/ProductionOrderObserver.php` met à jour les stocks (décrémentation des composants, incrémentation du produit fini) lorsque l'OF passe au statut `Completed`.
+        - **Automatisation (Notifications)** : L'observer `app/Observers/GPAO/ProductionOrderObserver.php` envoie des notifications (`app/Notifications/GPAO/ProductionOrderNotification.php`) lors de la création, mise à jour (changement de statut ou d'assignation) et suppression d'un OF.
+        - **Automatisation (Alertes de retard)** : La commande `app/Console/Commands/GPAO/CheckProductionOrderDelaysCommand.php` vérifie quotidiennement les OF en retard et envoie des alertes. Cette commande est planifiée via `routes/console.php`.
+        - **Calcul du Coût de Main-d'Œuvre** : L'observer `app/Observers/RH/TimesheetObserver.php` recalcule le `total_labor_cost` de l'OF à chaque modification d'un pointage lié.
 
 ---
 
@@ -205,3 +212,14 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
 | Core/Scheduling | routes/console.php | Fichier de planification des commandes Artisan (Laravel 12+). |
+| GPAO/OF | database/migrations/2024_01_01_000000_create_production_orders_table.php | Migration pour la table des ordres de fabrication. |
+| GPAO/OF | database/migrations/2024_01_01_000000_add_planning_fields_to_production_orders_table.php | Migration pour ajouter les champs de planification aux ordres de fabrication. |
+| GPAO/OF | app/Models/GPAO/ProductionOrder.php | Modèle principal des ordres de fabrication, incluant les champs de planification (`assigned_to`, `planned_start_date`, `planned_end_date`). |
+| GPAO/OF | app/Enums/GPAO/ProductionOrderStatus.php | Enum des statuts des ordres de fabrication. |
+| GPAO/OF | app/Observers/GPAO/ProductionOrderObserver.php | Gère la mise à jour des stocks et l'envoi de notifications lors des changements de statut d'un ordre de fabrication. |
+| GPAO/OF | app/Notifications/GPAO/ProductionOrderNotification.php | Notification pour les ordres de fabrication (création, mise à jour, changement de statut). |
+| GPAO/OF | database/migrations/2024_01_01_000001_add_actual_dates_to_production_orders_table.php | Migration pour ajouter les dates réelles aux ordres de fabrication. |
+| GPAO/OF | app/Console/Commands/GPAO/CheckProductionOrderDelaysCommand.php | Commande de vérification et d'envoi des alertes de retard pour les ordres de fabrication. Planifiée via `routes/console.php`. |
+| GPAO/OF | database/migrations/2024_01_01_000002_add_production_order_id_to_timesheets_table.php | Migration pour lier les pointages aux ordres de fabrication. |
+| GPAO/OF | database/migrations/2024_01_01_000003_add_total_labor_cost_to_production_orders_table.php | Migration pour ajouter le coût de la main-d'œuvre aux ordres de fabrication. |
+| GPAO/OF | database/migrations/2024_01_01_000004_add_sales_document_line_id_to_production_orders_table.php | Migration pour lier les ordres de fabrication aux lignes de commande client. |
