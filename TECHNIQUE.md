@@ -147,6 +147,16 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 ---
 
+### Module : Locations
+
+- **Description Fonctionnelle** : Gestion des contrats de location de matériel.
+- **Implémentation Technique** :
+    - **Modèle Principal** : `app/Models/Locations/RentalContract.php` pour gérer les contrats de location.
+    - **Statuts** : `app/Enums/Locations/RentalContractStatus.php` pour suivre l'état du contrat (Brouillon, Actif, Terminé, Annulé, En retard).
+    - **Automatisation (Calcul du montant)** : L'observer `app/Observers/Locations/RentalContractObserver.php` calcule automatiquement le montant total du contrat en fonction du tarif journalier et des dates.
+
+---
+
 ### Module : 3D Vision
 
 - **Description Fonctionnelle** : Visualisation 3D des projets.
@@ -223,3 +233,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | GPAO/OF | database/migrations/2024_01_01_000002_add_production_order_id_to_timesheets_table.php | Migration pour lier les pointages aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000003_add_total_labor_cost_to_production_orders_table.php | Migration pour ajouter le coût de la main-d'œuvre aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000004_add_sales_document_line_id_to_production_orders_table.php | Migration pour lier les ordres de fabrication aux lignes de commande client. |
+| Locations/Base | database/migrations/2024_01_01_000005_create_rental_contracts_table.php | Migration pour la table des contrats de location. |
+| Locations/Base | app/Models/Locations/RentalContract.php | Modèle principal des contrats de location. |
+| Locations/Base | app/Enums/Locations/RentalContractStatus.php | Enum des statuts des contrats de location. |
+| Locations/Base | app/Observers/Locations/RentalContractObserver.php | Gère le calcul automatique du montant total d'un contrat de location. |

@@ -34,6 +34,7 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
     - **Avancé** : Gestion des maintenances avec alertes d'échéance.
     - **Avancé** : Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**.
 - **GPAO** : **Avancé** : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre, et les notifications d'assignation et de retard.
+- **Locations** : **En cours** : Gestion des contrats de location de matériel, avec calcul automatique du montant total.
 
 ## 🚀 Stack Technique
 
