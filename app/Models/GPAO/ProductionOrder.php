@@ -29,6 +29,8 @@ class ProductionOrder extends Model
             'end_date' => 'date',
             'planned_start_date' => 'date',
             'planned_end_date' => 'date',
+            'actual_start_date' => 'date',
+            'actual_end_date' => 'date',
             'quantity' => 'decimal:2',
         ];
     }

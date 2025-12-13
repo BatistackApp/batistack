@@ -39,6 +39,23 @@ class ProductionOrderObserver
     }
 
     /**
+     * Handle the ProductionOrder "saving" event.
+     * This event is fired before a model is created or updated.
+     */
+    public function saving(ProductionOrder $productionOrder): void
+    {
+        // Si le statut passe à "En cours" et que la date de début réelle n'est pas définie
+        if ($productionOrder->isDirty('status') && $productionOrder->status === ProductionOrderStatus::InProgress && !$productionOrder->actual_start_date) {
+            $productionOrder->actual_start_date = now();
+        }
+
+        // Si le statut passe à "Terminé" et que la date de fin réelle n'est pas définie
+        if ($productionOrder->isDirty('status') && $productionOrder->status === ProductionOrderStatus::Completed && !$productionOrder->actual_end_date) {
+            $productionOrder->actual_end_date = now();
+        }
+    }
+
+    /**
      * Handle the ProductionOrder "saved" event.
      * This event is fired after a model is created or updated.
      */
