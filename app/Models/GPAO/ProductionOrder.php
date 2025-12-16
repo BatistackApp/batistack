@@ -4,6 +4,7 @@ namespace App\Models\GPAO;
 
 use App\Enums\GPAO\ProductionOrderStatus;
 use App\Models\Articles\Product;
+use App\Models\Articles\Warehouse;
 use App\Models\Core\Company;
 use App\Models\Facturation\SalesDocumentLine;
 use App\Models\RH\Timesheet;
@@ -41,6 +42,11 @@ class ProductionOrder extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 
     public function product(): BelongsTo
