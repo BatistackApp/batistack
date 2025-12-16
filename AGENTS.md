@@ -33,14 +33,13 @@ A. MODULES TERMINÉS / STABLES (Production)
 B. MODULES EN COURS (Focus Actuel)
 
 | Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
-| Comptabilité | Avancé : Comptabilisation auto. des NDF, consommations Ulys, **factures de vente et factures fournisseurs**. Génération du FEC avec gestion des tiers et numérotation séquentielle conforme. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. | Finaliser les journaux (vente/achat/banque), Grand Livre. |
+| Comptabilité | Avancé : Comptabilisation auto. des NDF, consommations Ulys, **factures de vente, factures fournisseurs et contrats de location**. Génération du FEC avec gestion des tiers et numérotation séquentielle conforme. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. | Finaliser les journaux (vente/achat/banque), Grand Livre. |
 | Paie | Avancé : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**. Génération d'exports CSV avec support de différents formats (Silae, Sage, générique). | Finaliser l'export vers Silae/Sage. |
 | Flottes | Avancé : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. | |
 | GPAO | Avancé : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre, et les notifications d'assignation et de retard. | |
+| Locations | En cours : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique. | |
 
 C. MODULES À FAIRE (Priorités Futures)
-
-Locations : Gestion des contrats de location (Interne ou Externe), Planning.
 
 Intervention : Gestion des interventions sur sites ou chantiers.
 
@@ -111,6 +110,11 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | GPAO/OF | database/migrations/2024_01_01_000002_add_production_order_id_to_timesheets_table.php | Migration pour lier les pointages aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000003_add_total_labor_cost_to_production_orders_table.php | Migration pour ajouter le coût de la main-d'œuvre aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000004_add_sales_document_line_id_to_production_orders_table.php | Migration pour lier les ordres de fabrication aux lignes de commande client. |
+| Locations/Base | app/Models/Locations/RentalContract.php | Modèle principal des contrats de location. |
+| Locations/Base | app/Models/Locations/RentalContractLine.php | Modèle pour les lignes de contrat de location. |
+| Locations/Automation | app/Observers/Locations/RentalContractLineObserver.php | Recalcule les totaux du contrat à chaque modification d'une ligne. |
+| Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
+| Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |
 
 4. RÔLES UTILISATEURS (AGENTS)
 
