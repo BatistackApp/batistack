@@ -34,7 +34,7 @@ B. MODULES EN COURS (Focus Actuel)
 
 | Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
 | Comptabilité | Avancé : Comptabilisation auto. des NDF, consommations Ulys, **factures de vente, factures fournisseurs et contrats de location**. Génération du FEC avec gestion des tiers et numérotation séquentielle conforme. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. | Finaliser les journaux (vente/achat/banque), Grand Livre. |
-| Paie | Avancé : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**. Génération d'exports CSV avec support de différents formats (Silae, Sage, générique). | Finaliser l'export vers Silae/Sage. |
+| Paie | Avancé : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**. Génération d'exports CSV avec support de différents formats (Silae, Sage, générique), **prêt pour l'intégration des spécifications exactes**. | Finaliser l'export vers Silae/Sage. |
 | Flottes | Avancé : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. | |
 | GPAO | Avancé : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre, et les notifications d'assignation et de retard. | |
 | Locations | En cours : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique. | |
@@ -115,17 +115,3 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Locations/Automation | app/Observers/Locations/RentalContractLineObserver.php | Recalcule les totaux du contrat à chaque modification d'une ligne. |
 | Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
 | Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |
-
-4. RÔLES UTILISATEURS (AGENTS)
-
-(Se référer à la section 1 de ce document pour la hiérarchie des permissions)
-
-| Rôle | Description |
-|---|---|
-| Direction / Administrateur | Accès complet, gestion des paramètres globaux. |
-| Conducteur / Chef d'équipe | Saisie primaire des données (ex: pointage, notes de frais). |
-| Gestionnaire de Chantier | Validation, suivi des coûts de projet. |
-| Gestionnaire Financier / Administratif | Facturation, rapprochement bancaire, gestion des dépenses. |
-| Gestionnaire de Flotte / Matériel | Gestion des véhicules, engins, maintenances, assurances. |
-| Responsable GPAO | Gestion des ordres de fabrication, planification, suivi de production. |
-| Opérateur de Production | Consultation des ordres de fabrication assignés, saisie des temps de production. |

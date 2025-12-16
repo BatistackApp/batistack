@@ -27,7 +27,7 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
     - **Avancé** : Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**.
 - **Paie** :
     - **Avancé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**.
-    - **Avancé** : Génération d'exports CSV avec support de différents formats (Silae, Sage, générique).
+    - **Avancé** : Génération d'exports CSV avec support de différents formats (Silae, Sage, générique), **prêt pour l'intégration des spécifications exactes**.
 - **Flottes** :
     - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
     - **Avancé** : Gestion des assurances avec alertes d'expiration.
