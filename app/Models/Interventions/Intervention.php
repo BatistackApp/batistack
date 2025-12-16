@@ -6,10 +6,13 @@ use App\Enums\Interventions\InterventionStatus;
 use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
 use App\Models\RH\Employee;
+use App\Models\RH\Timesheet;
 use App\Models\Tiers\Tiers;
 use App\Trait\BelongsToCompany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Intervention extends Model
@@ -26,6 +29,7 @@ class Intervention extends Model
             'planned_end_date' => 'date',
             'actual_start_date' => 'date',
             'actual_end_date' => 'date',
+            'total_labor_cost' => 'decimal:2',
         ];
     }
 
@@ -47,5 +51,22 @@ class Intervention extends Model
     public function technician(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'technician_id');
+    }
+
+    public function timesheets(): HasMany
+    {
+        return $this->hasMany(Timesheet::class);
+    }
+
+    /**
+     * Recalcule le coût total de la main-d'œuvre pour cette Intervention.
+     */
+    public function recalculateLaborCost(): void
+    {
+        $totalCost = $this->timesheets->sum(function (Timesheet $timesheet) {
+            return $timesheet->cost;
+        });
+
+        $this->updateQuietly(['total_labor_cost' => $totalCost]);
     }
 }
