@@ -8,13 +8,16 @@ use App\Models\Core\Company;
 use App\Models\RH\Employee;
 use App\Models\RH\Timesheet;
 use App\Models\Tiers\Tiers;
+use App\Observers\Interventions\InterventionObserver;
 use App\Trait\BelongsToCompany;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ObservedBy([InterventionObserver::class])]
 class Intervention extends Model
 {
     use SoftDeletes, BelongsToCompany;
