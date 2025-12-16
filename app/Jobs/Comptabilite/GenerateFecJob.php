@@ -13,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use League\Csv\CannotInsertRecord;
 use League\Csv\Exception;
+use League\Csv\InvalidArgument;
 use League\Csv\Writer;
 use Storage;
 
@@ -55,22 +56,37 @@ class GenerateFecJob implements ShouldQueue
             \Log::emergency($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
         }
 
+        // Initialisation des compteurs pour EcritureNum
+        $entryCounters = [];
+
         ComptaEntry::query()
             ->where('company_id', $this->company->id)
             ->whereBetween('date', [$this->fiscalYearStart, $this->fiscalYearEnd])
-            ->with(['journal', 'account', 'tier']) // Chargement de la relation tier
-            ->orderBy('date')
-            ->chunk(500, function ($entries) use ($csv) {
+            ->with(['journal', 'account', 'tier'])
+            ->orderBy('journal_id') // Tri par journal d'abord
+            ->orderBy('date')      // Puis par date
+            ->chunk(500, function ($entries) use ($csv, &$entryCounters) {
                 foreach ($entries as $entry) {
+                    // Génération de la clé pour le compteur (JournalCode-Année-Mois)
+                    $counterKey = $entry->journal->code . '-' . $entry->date->format('Y-m');
+
+                    // Initialisation du compteur si c'est la première fois qu'on le rencontre
+                    if (!isset($entryCounters[$counterKey])) {
+                        $entryCounters[$counterKey] = 1;
+                    }
+
+                    // Génération du numéro d'écriture séquentiel
+                    $ecritureNum = $entryCounters[$counterKey]++;
+
                     $csv->insertOne([
                         $entry->journal->code,
                         $entry->journal->name,
-                        $entry->reference ?? $entry->id,
+                        $ecritureNum, // Utilisation du compteur séquentiel
                         $entry->date->format('Ymd'),
                         $entry->account->number,
                         $entry->account->name,
-                        $entry->tier->id ?? '',          // CompAuxNum
-                        $entry->tier->name ?? '',        // CompAuxLib
+                        $entry->tier->id ?? '',
+                        $entry->tier->name ?? '',
                         $entry->reference,
                         $entry->date->format('Ymd'),
                         $entry->label,

@@ -23,7 +23,7 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
 
 - **Comptabilité** :
     - **Avancé** : Comptabilisation automatique des NDF, consommations Ulys, **factures de vente et factures fournisseurs**.
-    - **Avancé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers.
+    - **Avancé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers et numérotation séquentielle conforme.
     - **Avancé** : Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**.
 - **Paie** :
     - **Avancé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**.

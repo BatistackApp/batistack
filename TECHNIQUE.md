@@ -87,6 +87,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
         - Il remplit les champs `CompAuxNum` et `CompAuxLib` avec les informations du `Tiers` associé à l'écriture.
+        - Il assure une numérotation séquentielle et ininterrompue du champ `EcritureNum` par journal et par mois, pour une conformité totale avec la norme DGFIP.
     - **Reporting Comptable** :
         - Le service `app/Services/Comptabilite/ComptaReportingService.php` fournit des méthodes pour récupérer les écritures par journal (`getJournalEntries`) ou par compte (`getGeneralLedgerEntries`), et calculer les soldes (`getAccountBalanceAtDate`).
         - **Génération de Rapports Automatisée** : La commande `app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php` utilise ce service pour générer des fichiers CSV pour les journaux et le Grand Livre pour une période donnée. Cette commande est planifiée pour s'exécuter régulièrement (ex: mensuellement) via `routes/console.php`.

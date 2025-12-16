@@ -3,7 +3,7 @@
 namespace App\Services\Paie;
 
 use App\Enums\Paie\PayrollExportFormat;
-use App\Enums\Paie\PayrollVariableType; // Import the enum
+use App\Enums\Paie\PayrollVariableType;
 use App\Models\Paie\PayrollSlip;
 use Illuminate\Support\Str;
 

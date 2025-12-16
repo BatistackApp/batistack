@@ -23,9 +23,7 @@ class SalesDocumentComptaService
     public function postSalesDocumentEntry(SalesDocument $salesDocument): void
     {
         // Vérifier si les écritures ont déjà été passées pour ce document
-        if (ComptaEntry::where('sourceable_type', SalesDocument::class)
-            ->where('sourceable_id', $salesDocument->id)
-            ->exists()) {
+        if ($salesDocument->is_posted_to_compta) {
             throw new Exception("Les écritures comptables pour le document de vente {$salesDocument->reference} ont déjà été passées.");
         }
 
@@ -110,8 +108,8 @@ class SalesDocumentComptaService
                 'sourceable_id' => $salesDocument->id,
             ]);
 
-            // Optionnel : Mettre à jour le statut du document de vente pour indiquer qu'il a été comptabilisé
-            // $salesDocument->update(['is_posted_to_compta' => true]); // Nécessiterait un champ dans la table sales_documents
+            // Mettre à jour le statut du document de vente pour indiquer qu'il a été comptabilisé
+            $salesDocument->update(['is_posted_to_compta' => true]);
         });
     }
 }

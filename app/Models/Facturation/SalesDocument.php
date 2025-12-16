@@ -46,6 +46,7 @@ class SalesDocument extends Model
         return [
             'type' => SalesDocumentType::class,
             'status' => SalesDocumentStatus::class,
+            'is_posted_to_compta' => 'boolean',
             'date' => 'date',
             'validity_date' => 'date',
             'due_date' => 'date',

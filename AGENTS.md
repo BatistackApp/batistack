@@ -7,7 +7,7 @@ Ce document fournit une vue d'ensemble du projet SAAS modulaire Batistack (spéc
 |
 
 | Élément | Description | Détails Importants |
-| Framework | Laravel 11 (PHP) | Architecture modulaire, séparation par domaines (RH, Fleets, Compta, Chantiers...). |
+| Framework | Laravel 12 (PHP) | Architecture modulaire, séparation par domaines (RH, Fleets, Compta, Chantiers...). |
 | UI / Admin | Filament PHP | L'intégralité du back-office et de l'interface utilisateur est construite avec Filament. |
 | Base de Données | MySQL / PostgreSQL | Utilisation des foreignId, constrained()->cascadeOnDelete(). |
 | Multitenancy | Oui | Chaque Model utilise le trait App\Trait\BelongsToCompany et les requêtes doivent être scopées par company_id. |
@@ -33,11 +33,10 @@ A. MODULES TERMINÉS / STABLES (Production)
 B. MODULES EN COURS (Focus Actuel)
 
 | Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
-| Comptabilité | Avancé : Comptabilisation auto. des NDF et Ulys (ExpenseComptaService, UlysComptaService). Génération du FEC avec gestion des tiers (GenerateFecJob). Reporting des journaux et Grand Livre (ComptaReportingService). | Finaliser les journaux (vente/achat/banque), Grand Livre. |
-| Paie | Avancé : Modèles de base prêts (PayrollPeriods, PayrollSlip, PayrollVariable), Enums (PayrollVariableType), Service de calcul (PayrollCalculator). Génération d'exports CSV (PayrollExportService, GeneratePayrollExportJob) avec support de différents formats (PayrollExportFormat). | Finaliser l'export vers Silae/Sage. |
-| Flottes | Avancé : Gestion détaillée des véhicules (Fleet, FleetType). Gestion des assurances avec alertes (Insurance, CheckFleetExpirationsCommand, InsuranceExpiringNotification). Assignation des véhicules aux employés/équipes (FleetAssignment). Gestion des maintenances avec alertes d'échéance (Maintenance, MaintenanceType, CheckMaintenanceAlertsCommand, MaintenanceAlertNotification). | |
-| GPAO | Nomenclature (Recette) faite. | Manque la gestion des Ordres de Fabrication (OF). |
-| 3D Vision | Coordonnées GPS prêtes. | Manque l'intégration du Viewer BIM/IFC. |
+| Comptabilité | Avancé : Comptabilisation auto. des NDF, consommations Ulys, **factures de vente et factures fournisseurs**. Génération du FEC avec gestion des tiers et numérotation séquentielle conforme. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. | Finaliser les journaux (vente/achat/banque), Grand Livre. |
+| Paie | Avancé : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**. Génération d'exports CSV avec support de différents formats (Silae, Sage, générique). | Finaliser l'export vers Silae/Sage. |
+| Flottes | Avancé : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. | |
+| GPAO | Avancé : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre, et les notifications d'assignation et de retard. | |
 
 C. MODULES À FAIRE (Priorités Futures)
 
@@ -54,12 +53,25 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Compta/NDF | app/Services/Comptabilite/ExpenseComptaService.php | Service de comptabilisation des notes de frais, inclut `tier_id`. |
 | Compta/NDF | app/Observers/NoteFrais/ExpenseObserver.php | Déclenche la comptabilisation des NDF après validation. |
 | Compta/Ulys | app/Services/Comptabilite/UlysComptaService.php | Service de comptabilisation des consommations Ulys, inclut `tier_id`. |
-| Compta/FEC | app/Jobs/Comptabilite/GenerateFecJob.php | Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers. |
+| Compta/FEC | app/Jobs/Comptabilite/GenerateFecJob.php | Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers et numérotation séquentielle conforme. |
 | Compta/Base | app/Models/Comptabilite/ComptaEntry.php | Modèle d'écriture comptable, inclut `tier_id` et relation `tier`. |
 | Compta/Reporting | app/Services/Comptabilite/ComptaReportingService.php | Service de récupération des données pour les journaux et le Grand Livre. |
+| Compta/Rapports | app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php | Commande Artisan pour générer les rapports comptables (journaux, grand livre) en CSV. Planifiée via `routes/console.php`. |
+| Facturation/Vente | app/Models/Facturation/SalesDocument.php | Modèle principal des documents de vente. |
+| Facturation/Vente | app/Enums/Facturation/SalesDocumentStatus.php | Enum des statuts des documents de vente. |
+| Facturation/Vente | app/Services/Comptabilite/SalesDocumentComptaService.php | Service de comptabilisation des documents de vente. |
+| Facturation/Vente | app/Observers/Facturation/SalesDocumentObserver.php | Déclenche la comptabilisation des documents de vente. |
+| Facturation/Achat | database/migrations/2024_01_01_000000_create_purchase_documents_table.php | Migration pour la table des documents d'achat. |
+| Facturation/Achat | app/Models/Facturation/PurchaseDocument.php | Modèle principal des documents d'achat (factures fournisseurs). |
+| Facturation/Achat | app/Enums/Facturation/PurchaseDocumentStatus.php | Enum des statuts des documents d'achat. |
+| Facturation/Achat | app/Services/Comptabilite/PurchaseDocumentComptaService.php | Service de comptabilisation des documents d'achat. |
+| Facturation/Achat | app/Observers/Facturation/PurchaseDocumentObserver.php | Déclenche la comptabilisation des documents d'achat. |
+| Banque/Transactions | app/Models/Banque/BankTransaction.php | Modèle des transactions bancaires importées. |
+| Banque/Transactions | app/Services/Comptabilite/BankTransactionComptaService.php | Service de comptabilisation des transactions bancaires. |
+| Banque/Transactions | app/Observers/Banque/BankTransactionObserver.php | Déclenche la comptabilisation des transactions bancaires. |
 | RH/Paie | app/Enums/Paie/PayrollVariableType.php | Enum des variables de paie (Heures, Primes, Frais). |
 | Paie/Calcul | app/Services/Paie/PayrollCalculator.php | Service de calcul des fiches de paie (agrégation heures/frais). |
-| Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie. |
+| Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie, avec logique Silae/Sage affinée. |
 | Paie/Export | app/Enums/Paie/PayrollExportFormat.php | Enum des formats d'export de paie (Silae, Sage, GenericCSV). |
 | Paie/Job | app/Jobs/Paie/GeneratePayrollExportJob.php | Orchestre le calcul et l'export de paie, attache le CSV au `PayrollSlip`. |
 | Paie/Structure | database/migrations/2025_12_10...create_payroll_slips_table.php | Structure de la fiche de paie. |
@@ -76,11 +88,29 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Flottes/Maintenance | app/Enums/Fleets/MaintenanceType.php | Enum des types de maintenance. |
 | Flottes/Maintenance | app/Console/Commands/Fleets/CheckMaintenanceAlertsCommand.php | Commande de vérification des maintenances à venir. |
 | Flottes/Maintenance | app/Notifications/Fleets/MaintenanceAlertNotification.php | Notification d'alerte de maintenance. |
-| Flottes/Assignation | app/Models/Fleets/FleetAssignment.php | Modèle pour l'assignation polymorphique des véhicules. |
-| Flottes/Assignation | database/migrations/2025_12_12...create_fleet_assignments_table.php | Migration pour la table d'assignation des flottes. |
+| Flottes/Assignation | app/Models/Fleets/FleetAssignment.php | Modèle pour l'assignation polymorphique des véhicules, incluant `status` et `notified_at`. |
+| Flottes/Assignation | app/Enums/Fleets/FleetAssignmentStatus.php | Enum des statuts d'assignation de flotte. |
+| Flottes/Assignation | database/migrations/2025_12_12_170000_create_fleet_assignments_table.php | Migration pour la table d'assignation des flottes. |
+| Flottes/Assignation | database/migrations/2025_12_12_170001_add_status_and_notified_at_to_fleet_assignments_table.php | Migration pour ajouter les champs `status` et `notified_at` aux assignations de flotte. |
+| Flottes/Assignation | app/Observers/Fleets/FleetAssignmentObserver.php | Gère la mise à jour du statut et l'envoi de notifications pour les assignations de flotte. |
+| Flottes/Assignation | app/Notifications/Fleets/FleetAssignedNotification.php | Notification d'assignation de flotte (création, mise à jour, suppression). |
+| Flottes/Assignation | app/Notifications/Fleets/FleetAssignmentReminderNotification.php | Notification de rappel de fin d'assignation de flotte. |
+| Flottes/Assignation | app/Console/Commands/Fleets/CheckFleetAssignmentRemindersCommand.php | Commande de vérification et d'envoi des rappels de fin d'assignation de flotte. Planifiée via `routes/console.php`. |
 | Flottes/Structure | database/migrations/2025_12_11...create_maintenances_table.php | Stocke les informations de suivi et coût des entretiens. |
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
+| Core/Scheduling | routes/console.php | Fichier de planification des commandes Artisan (Laravel 12+). |
+| GPAO/OF | database/migrations/2024_01_01_000000_create_production_orders_table.php | Migration pour la table des ordres de fabrication. |
+| GPAO/OF | database/migrations/2024_01_01_000000_add_planning_fields_to_production_orders_table.php | Migration pour ajouter les champs de planification aux ordres de fabrication. |
+| GPAO/OF | app/Models/GPAO/ProductionOrder.php | Modèle principal des ordres de fabrication, incluant les champs de planification (`assigned_to`, `planned_start_date`, `planned_end_date`). |
+| GPAO/OF | app/Enums/GPAO/ProductionOrderStatus.php | Enum des statuts des ordres de fabrication. |
+| GPAO/OF | app/Observers/GPAO/ProductionOrderObserver.php | Gère la mise à jour des stocks et l'envoi de notifications lors des changements de statut d'un ordre de fabrication. |
+| GPAO/OF | app/Notifications/GPAO/ProductionOrderNotification.php | Notification pour les ordres de fabrication (création, mise à jour, changement de statut). |
+| GPAO/OF | database/migrations/2024_01_01_000001_add_actual_dates_to_production_orders_table.php | Migration pour ajouter les dates réelles aux ordres de fabrication. |
+| GPAO/OF | app/Console/Commands/GPAO/CheckProductionOrderDelaysCommand.php | Commande de vérification et d'envoi des alertes de retard pour les ordres de fabrication. Planifiée via `routes/console.php`. |
+| GPAO/OF | database/migrations/2024_01_01_000002_add_production_order_id_to_timesheets_table.php | Migration pour lier les pointages aux ordres de fabrication. |
+| GPAO/OF | database/migrations/2024_01_01_000003_add_total_labor_cost_to_production_orders_table.php | Migration pour ajouter le coût de la main-d'œuvre aux ordres de fabrication. |
+| GPAO/OF | database/migrations/2024_01_01_000004_add_sales_document_line_id_to_production_orders_table.php | Migration pour lier les ordres de fabrication aux lignes de commande client. |
 
 4. RÔLES UTILISATEURS (AGENTS)
 
@@ -93,3 +123,5 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Gestionnaire de Chantier | Validation, suivi des coûts de projet. |
 | Gestionnaire Financier / Administratif | Facturation, rapprochement bancaire, gestion des dépenses. |
 | Gestionnaire de Flotte / Matériel | Gestion des véhicules, engins, maintenances, assurances. |
+| Responsable GPAO | Gestion des ordres de fabrication, planification, suivi de production. |
+| Opérateur de Production | Consultation des ordres de fabrication assignés, saisie des temps de production. |
