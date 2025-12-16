@@ -74,4 +74,16 @@ class ProductionOrder extends Model
     {
         return in_array($this->status, [ProductionOrderStatus::Completed, ProductionOrderStatus::Cancelled]);
     }
+
+    /**
+     * Recalcule le coût total de la main-d'œuvre pour cet Ordre de Fabrication.
+     */
+    public function recalculateLaborCost(): void
+    {
+        $totalCost = $this->timesheets->sum(function (Timesheet $timesheet) {
+            return $timesheet->cost;
+        });
+
+        $this->updateQuietly(['total_labor_cost' => $totalCost]);
+    }
 }

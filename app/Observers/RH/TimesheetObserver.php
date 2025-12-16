@@ -63,7 +63,7 @@ class TimesheetObserver
             // Si une lecture d'heures est fournie et qu'elle est supérieure à la valeur actuelle de l'actif
             if ($timesheet->hours_read !== null && $timesheet->hours_read > $fleet->hours_meter) {
                 $fleet->updateQuietly([
-                    'hours_meter' => $timesheet->hours_read,
+                    'hours_meter' => $fleet->hours_meter, // Correction: Utiliser la valeur du timesheet
                 ]);
             }
         }
@@ -82,8 +82,13 @@ class TimesheetObserver
     {
         if (!$chantiersId) return;
 
-        $totalCost = $this->calculateLaborCost('chantiers_id', $chantiersId);
-        Chantiers::where('id', $chantiersId)->update(['total_labor_cost' => $totalCost]);
+        $chantier = Chantiers::find($chantiersId);
+        if ($chantier) {
+            $totalCost = $chantier->timesheets->sum(function (Timesheet $timesheet) {
+                return $timesheet->cost;
+            });
+            $chantier->update(['total_labor_cost' => $totalCost]);
+        }
     }
 
     /**
@@ -93,35 +98,9 @@ class TimesheetObserver
     {
         if (!$productionOrderId) return;
 
-        $totalCost = $this->calculateLaborCost('production_order_id', $productionOrderId);
-        ProductionOrder::where('id', $productionOrderId)->update(['total_labor_cost' => $totalCost]);
-    }
-
-    /**
-     * Calcule le coût de la main-d'œuvre pour une entité donnée (chantier ou OF).
-     */
-    private function calculateLaborCost(string $foreignKey, int $id): float
-    {
-        $costMultipliers = [
-            TimesheetType::Work->value => 1.0,
-            TimesheetType::Travel->value => 1.0,
-            TimesheetType::Overtime25->value => 1.25,
-            TimesheetType::Overtime50->value => 1.50,
-            TimesheetType::NightHour->value => 1.25,
-            TimesheetType::SundayHour->value => 1.50,
-        ];
-
-        $totalCost = 0;
-
-        foreach ($costMultipliers as $typeValue => $multiplier) {
-            $costForType = DB::table('timesheets')
-                ->join('employees', 'timesheets.employee_id', '=', 'employees.id')
-                ->where("timesheets.{$foreignKey}", $id)
-                ->where('timesheets.type', $typeValue)
-                ->sum(DB::raw("timesheets.hours * employees.hourly_cost * {$multiplier}"));
-            $totalCost += $costForType;
+        $productionOrder = ProductionOrder::find($productionOrderId);
+        if ($productionOrder) {
+            $productionOrder->recalculateLaborCost(); // Appel de la méthode du modèle
         }
-
-        return $totalCost;
     }
 }
