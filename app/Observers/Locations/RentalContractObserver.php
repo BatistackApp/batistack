@@ -6,9 +6,26 @@ use App\Enums\Locations\RentalContractStatus;
 use App\Models\Locations\RentalContract;
 use App\Services\Comptabilite\RentalContractComptaService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Carbon;
 
 class RentalContractObserver
 {
+    /**
+     * Handle the RentalContract "saving" event.
+     * This event is fired before a model is created or updated.
+     */
+    public function saving(RentalContract $rentalContract): void
+    {
+        // Calculer le montant total si les dates et le tarif sont définis
+        if ($rentalContract->start_date && $rentalContract->end_date && $rentalContract->daily_rate) {
+            $startDate = Carbon::parse($rentalContract->start_date);
+            $endDate = Carbon::parse($rentalContract->end_date);
+            $days = $startDate->diffInDays($endDate) + 1; // +1 pour inclure le jour de début
+
+            $rentalContract->total_ttc = $days * $rentalContract->daily_rate;
+        }
+    }
+
     /**
      * Handle the RentalContract "created" event.
      */
@@ -48,14 +65,14 @@ class RentalContractObserver
             }
         }
 
-        // Si le statut vient de passer à "Active"
-        if ($contract->isDirty('status') && $contract->status === RentalContractStatus::Active) {
+        // Si le statut vient de passer à "Terminé"
+        if ($contract->isDirty('status') && $contract->status === RentalContractStatus::Completed) {
             try {
                 $comptaService = new RentalContractComptaService();
-                $comptaService->postRentalContractEntry($contract);
-                Log::info("Contrat de location {$contract->reference} comptabilisé avec succès.");
+                $comptaService->generateInvoiceFromContract($contract);
+                Log::info("Facture pour le contrat de location {$contract->reference} générée avec succès.");
             } catch (\Exception $e) {
-                Log::error("Erreur lors de la comptabilisation du contrat de location {$contract->reference}: " . $e->getMessage());
+                Log::error("Erreur lors de la génération de la facture pour le contrat de location {$contract->reference}: " . $e->getMessage());
             }
         }
     }
