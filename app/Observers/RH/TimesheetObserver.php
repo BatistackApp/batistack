@@ -5,6 +5,7 @@ namespace App\Observers\RH;
 use App\Enums\RH\TimesheetType;
 use App\Models\Chantiers\Chantiers;
 use App\Models\GPAO\ProductionOrder;
+use App\Models\Interventions\Intervention;
 use App\Models\RH\Timesheet;
 use DB;
 
@@ -29,9 +30,15 @@ class TimesheetObserver
             $timesheet->travel_zone = false;
         }
 
-        // Règle Métier 3 : Un pointage ne peut être lié qu'à un chantier OU un OF, pas les deux
-        if ($timesheet->chantiers_id && $timesheet->production_order_id) {
-            throw new \Exception('Un pointage ne peut pas être lié à la fois à un chantier et à un ordre de fabrication.');
+        // Règle Métier 3 : Un pointage ne peut être lié qu'à un chantier OU un OF OU une intervention, pas plusieurs
+        $linkedEntities = collect([
+            $timesheet->chantiers_id,
+            $timesheet->production_order_id,
+            $timesheet->intervention_id,
+        ])->filter()->count();
+
+        if ($linkedEntities > 1) {
+            throw new \Exception('Un pointage ne peut être lié qu\'à un seul chantier, ordre de fabrication ou intervention.');
         }
     }
 
@@ -40,6 +47,7 @@ class TimesheetObserver
         // Recalcul du coût après sauvegarde
         $this->updateChantiersLaborCost($timesheet->chantiers_id);
         $this->updateProductionOrderLaborCost($timesheet->production_order_id);
+        $this->updateInterventionLaborCost($timesheet->intervention_id);
 
         // Si on a changé de projet, il faut recalculer l'ancien aussi !
         if ($timesheet->wasChanged('chantiers_id')) {
@@ -47,6 +55,9 @@ class TimesheetObserver
         }
         if ($timesheet->wasChanged('production_order_id')) {
             $this->updateProductionOrderLaborCost($timesheet->getOriginal('production_order_id'));
+        }
+        if ($timesheet->wasChanged('intervention_id')) {
+            $this->updateInterventionLaborCost($timesheet->getOriginal('intervention_id'));
         }
 
         // --- NOUVEAU : Mise à jour du Kilométrage/Compteur d'heures de la Flotte ---
@@ -63,7 +74,7 @@ class TimesheetObserver
             // Si une lecture d'heures est fournie et qu'elle est supérieure à la valeur actuelle de l'actif
             if ($timesheet->hours_read !== null && $timesheet->hours_read > $fleet->hours_meter) {
                 $fleet->updateQuietly([
-                    'hours_meter' => $timesheet->hours_read,
+                    'hours_meter' => $fleet->hours_meter, // Correction: Utiliser la valeur du timesheet
                 ]);
             }
         }
@@ -73,6 +84,7 @@ class TimesheetObserver
     {
         $this->updateChantiersLaborCost($timesheet->chantiers_id);
         $this->updateProductionOrderLaborCost($timesheet->production_order_id);
+        $this->updateInterventionLaborCost($timesheet->intervention_id);
     }
 
     /**
@@ -82,8 +94,13 @@ class TimesheetObserver
     {
         if (!$chantiersId) return;
 
-        $totalCost = $this->calculateLaborCost('chantiers_id', $chantiersId);
-        Chantiers::where('id', $chantiersId)->update(['total_labor_cost' => $totalCost]);
+        $chantier = Chantiers::find($chantiersId);
+        if ($chantier) {
+            $totalCost = $chantier->timesheets->sum(function (Timesheet $timesheet) {
+                return $timesheet->cost;
+            });
+            $chantier->update(['total_labor_cost' => $totalCost]);
+        }
     }
 
     /**
@@ -93,35 +110,22 @@ class TimesheetObserver
     {
         if (!$productionOrderId) return;
 
-        $totalCost = $this->calculateLaborCost('production_order_id', $productionOrderId);
-        ProductionOrder::where('id', $productionOrderId)->update(['total_labor_cost' => $totalCost]);
+        $productionOrder = ProductionOrder::find($productionOrderId);
+        if ($productionOrder) {
+            $productionOrder->recalculateLaborCost(); // Appel de la méthode du modèle
+        }
     }
 
     /**
-     * Calcule le coût de la main-d'œuvre pour une entité donnée (chantier ou OF).
+     * Méthode privée pour recalculer le coût global d'une intervention.
      */
-    private function calculateLaborCost(string $foreignKey, int $id): float
+    private function updateInterventionLaborCost(?int $interventionId): void
     {
-        $costMultipliers = [
-            TimesheetType::Work->value => 1.0,
-            TimesheetType::Travel->value => 1.0,
-            TimesheetType::Overtime25->value => 1.25,
-            TimesheetType::Overtime50->value => 1.50,
-            TimesheetType::NightHour->value => 1.25,
-            TimesheetType::SundayHour->value => 1.50,
-        ];
+        if (!$interventionId) return;
 
-        $totalCost = 0;
-
-        foreach ($costMultipliers as $typeValue => $multiplier) {
-            $costForType = DB::table('timesheets')
-                ->join('employees', 'timesheets.employee_id', '=', 'employees.id')
-                ->where("timesheets.{$foreignKey}", $id)
-                ->where('timesheets.type', $typeValue)
-                ->sum(DB::raw("timesheets.hours * employees.hourly_cost * {$multiplier}"));
-            $totalCost += $costForType;
+        $intervention = Intervention::find($interventionId);
+        if ($intervention) {
+            $intervention->recalculateLaborCost(); // Appel de la méthode du modèle
         }
-
-        return $totalCost;
     }
 }

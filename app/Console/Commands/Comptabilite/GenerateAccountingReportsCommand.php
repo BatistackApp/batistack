@@ -2,150 +2,127 @@
 
 namespace App\Console\Commands\Comptabilite;
 
-use App\Enums\Comptabilite\JournalType;
 use App\Models\Comptabilite\ComptaAccount;
 use App\Models\Comptabilite\ComptaJournal;
 use App\Models\Core\Company;
 use App\Services\Comptabilite\ComptaReportingService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 use League\Csv\Writer;
+use Storage;
 
 class GenerateAccountingReportsCommand extends Command
 {
-    protected $signature = 'compta:generate-reports {companyId?} {--month=} {--year=}';
-    protected $description = 'Génère les rapports comptables (journaux, grand livre) pour une période donnée.';
+    protected $signature = 'compta:generate-reports {--month=} {--year=}';
 
-    public function handle(ComptaReportingService $reportingService): void
+    protected $description = 'Generates accounting reports (journals, general ledger) in CSV format for a given period.';
+
+    public function __construct(private ComptaReportingService $reportingService)
     {
-        $companyId = $this->argument('companyId');
-        $month = $this->option('month');
-        $year = $this->option('year');
+        parent::__construct();
+    }
 
-        // Déterminer la compagnie
-        if ($companyId) {
-            $company = Company::find($companyId);
-            if (!$company) {
-                $this->error("Compagnie avec l'ID {$companyId} non trouvée.");
-                return;
-            }
-            $companies = collect([$company]);
-        } else {
-            $companies = Company::all();
-        }
+    public function handle(): void
+    {
+        $month = $this->option('month') ?? now()->month;
+        $year = $this->option('year') ?? now()->year;
 
-        if ($companies->isEmpty()) {
-            $this->info("Aucune compagnie trouvée pour générer les rapports.");
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $this->info("Generating accounting reports for {$startDate->format('F Y')}...");
+
+        // Pour l'instant, on traite la première compagnie trouvée.
+        // Dans un environnement multi-tenant, il faudrait itérer sur toutes les compagnies.
+        $company = Company::first();
+        if (!$company) {
+            $this->error('No company found.');
             return;
         }
 
-        foreach ($companies as $company) {
-            $this->info("Génération des rapports pour la compagnie : {$company->name} (ID: {$company->id})");
+        $this->generateJournalReports($company, $startDate, $endDate);
+        $this->generateGeneralLedgerReport($company, $startDate, $endDate);
 
-            // Déterminer la période
-            $targetDate = Carbon::now();
-            if ($year) {
-                $targetDate->setYear($year);
-            }
-            if ($month) {
-                $targetDate->setMonth($month);
-            }
-
-            $startDate = $targetDate->copy()->startOfMonth();
-            $endDate = $targetDate->copy()->endOfMonth();
-
-            $this->info("Période : du {$startDate->format('d/m/Y')} au {$endDate->format('d/m/Y')}");
-
-            $basePath = "compta_reports/{$company->id}/{$targetDate->format('Y-m')}";
-            Storage::disk('local')->makeDirectory($basePath);
-
-            // 1. Génération des Journaux
-            $this->generateJournals($company, $startDate, $endDate, $reportingService, $basePath);
-
-            // 2. Génération du Grand Livre
-            $this->generateGeneralLedger($company, $startDate, $endDate, $reportingService, $basePath);
-
-            $this->info("Rapports générés pour {$company->name}.");
-        }
-
-        $this->info("Processus de génération des rapports comptables terminé.");
+        $this->info('Accounting reports generated successfully.');
     }
 
-    private function generateJournals(Company $company, Carbon $startDate, Carbon $endDate, ComptaReportingService $reportingService, string $basePath): void
+    private function generateJournalReports(Company $company, Carbon $startDate, Carbon $endDate): void
     {
         $journals = ComptaJournal::where('company_id', $company->id)->get();
 
         foreach ($journals as $journal) {
-            $this->comment("  Génération du journal : {$journal->getLabel()} ({$journal->type->value})");
-            $entries = $reportingService->getJournalEntries($company, $journal, $startDate, $endDate);
+            $entries = $this->reportingService->getJournalEntries($company, $journal, $startDate, $endDate);
 
             if ($entries->isEmpty()) {
-                $this->info("    Aucune écriture pour ce journal.");
                 continue;
             }
 
-            $filename = "journal_{$journal->type->value}_{$startDate->format('Y-m')}.csv";
-            $filePath = "{$basePath}/{$filename}";
+            $this->line("-> Generating report for journal '{$journal->name}'...");
 
             $csv = Writer::createFromString('');
-            $csv->insertOne(['Date', 'Référence', 'Compte', 'Libellé Compte', 'Tiers', 'Libellé', 'Débit', 'Crédit']);
+            $csv->setDelimiter(';');
+            $csv->insertOne(['Date', 'Compte', 'Libellé Compte', 'Tiers', 'Libellé Écriture', 'Débit', 'Crédit']);
 
             foreach ($entries as $entry) {
                 $csv->insertOne([
-                    $entry->date->format('Y-m-d'),
-                    $entry->journal->type->value . '-' . $entry->id, // Exemple de référence
+                    $entry->date->format('d/m/Y'),
                     $entry->account->number,
-                    $entry->account->label,
+                    $entry->account->name,
                     $entry->tier->name ?? '',
                     $entry->label,
-                    $entry->debit,
-                    $entry->credit,
+                    number_format($entry->debit, 2, ',', ''),
+                    number_format($entry->credit, 2, ',', ''),
                 ]);
             }
-            Storage::disk('local')->put($filePath, $csv->toString());
-            $this->info("    Fichier créé : {$filePath}");
+
+            $fileName = "journal_{$journal->code}_{$startDate->format('Y-m')}.csv";
+            $filePath = "reports/compta/{$company->id}/{$startDate->format('Y/m')}/journals/{$fileName}";
+            Storage::put($filePath, $csv->toString());
         }
     }
 
-    private function generateGeneralLedger(Company $company, Carbon $startDate, Carbon $endDate, ComptaReportingService $reportingService, string $basePath): void
+    private function generateGeneralLedgerReport(Company $company, Carbon $startDate, Carbon $endDate): void
     {
-        $accounts = ComptaAccount::where('company_id', $company->id)->get();
+        $this->line("-> Generating General Ledger report...");
+
+        // On récupère tous les comptes qui ont eu des mouvements dans la période
+        $accounts = ComptaAccount::where('company_id', $company->id)
+            ->whereHas('entries', function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('date', [$startDate, $endDate]);
+            })
+            ->get();
 
         foreach ($accounts as $account) {
-            $this->comment("  Génération du Grand Livre pour le compte : {$account->number} - {$account->label}");
-            $entries = $reportingService->getGeneralLedgerEntries($company, $account, $startDate, $endDate);
+            $entries = $this->reportingService->getGeneralLedgerEntries($company, $account, $startDate, $endDate);
 
             if ($entries->isEmpty()) {
-                $this->info("    Aucune écriture pour ce compte.");
                 continue;
             }
 
-            $filename = "grand_livre_{$account->number}_{$startDate->format('Y-m')}.csv";
-            $filePath = "{$basePath}/{$filename}";
-
             $csv = Writer::createFromString('');
-            $csv->insertOne(['Date', 'Journal', 'Tiers', 'Libellé', 'Débit', 'Crédit', 'Solde Cumulé']);
+            $csv->setDelimiter(';');
+            $csv->insertOne(['Date', 'Journal', 'Libellé Écriture', 'Débit', 'Crédit', 'Solde']);
 
-            $balance = $reportingService->getAccountBalanceAtDate($company, $account, $startDate->copy()->subDay()); // Solde au début de période
-            $this->info("    Solde initial au {$startDate->copy()->subDay()->format('d/m/Y')} : {$balance}");
+            // Calcul du solde initial au début de la période
+            $initialBalance = $this->reportingService->getAccountBalanceAtDate($company, $account, $startDate->copy()->subDay());
+            $csv->insertOne(['', '', 'Solde au ' . $startDate->format('d/m/Y'), '', '', number_format($initialBalance, 2, ',', '')]);
 
-            $data = [];
+            $runningBalance = $initialBalance;
             foreach ($entries as $entry) {
-                $balance += $entry->debit - $entry->credit;
-                $data[] = [
-                    $entry->date->format('Y-m-d'),
-                    $entry->journal->type->value,
-                    $entry->tier->name ?? '',
+                $runningBalance += $entry->debit - $entry->credit;
+                $csv->insertOne([
+                    $entry->date->format('d/m/Y'),
+                    $entry->journal->code,
                     $entry->label,
-                    $entry->debit,
-                    $entry->credit,
-                    $balance,
-                ];
+                    number_format($entry->debit, 2, ',', ''),
+                    number_format($entry->credit, 2, ',', ''),
+                    number_format($runningBalance, 2, ',', ''),
+                ]);
             }
-            $csv->insertAll($data);
-            Storage::disk('local')->put($filePath, $csv->toString());
-            $this->info("    Fichier créé : {$filePath}");
+
+            $fileName = "grand-livre_{$account->number}_{$startDate->format('Y-m')}.csv";
+            $filePath = "reports/compta/{$company->id}/{$startDate->format('Y/m')}/general-ledger/{$fileName}";
+            Storage::put($filePath, $csv->toString());
         }
     }
 }

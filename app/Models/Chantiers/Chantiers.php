@@ -32,6 +32,7 @@ class Chantiers extends Model
             'end_date_real' => 'date',
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
+            'total_rental_cost' => 'decimal:2',
             'status' => ChantiersStatus::class,
             'is_overdue' => 'boolean'
         ];
