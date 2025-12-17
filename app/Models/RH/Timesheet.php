@@ -7,6 +7,7 @@ use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
 use App\Models\Fleets\Fleet;
 use App\Models\GPAO\ProductionOrder;
+use App\Models\Interventions\Intervention;
 use App\Observers\RH\TimesheetObserver;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -21,6 +22,7 @@ class Timesheet extends Model
 
     protected $guarded = [];
 
+
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
@@ -34,6 +36,11 @@ class Timesheet extends Model
     public function productionOrder(): BelongsTo
     {
         return $this->belongsTo(ProductionOrder::class);
+    }
+
+    public function intervention(): BelongsTo
+    {
+        return $this->belongsTo(Intervention::class);
     }
 
     public function fleet(): BelongsTo

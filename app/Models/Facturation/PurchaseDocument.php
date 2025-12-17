@@ -36,6 +36,7 @@ class PurchaseDocument extends Model
             'document_date' => 'date',
             'due_date' => 'date',
             'status' => PurchaseDocumentStatus::class,
+            'is_posted_to_compta' => 'boolean',
             'total_ht' => 'decimal:2',
             'total_vat' => 'decimal:2',
             'total_ttc' => 'decimal:2',

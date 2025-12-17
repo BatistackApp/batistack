@@ -4,6 +4,7 @@ namespace App\Models\GPAO;
 
 use App\Enums\GPAO\ProductionOrderStatus;
 use App\Models\Articles\Product;
+use App\Models\Articles\Warehouse;
 use App\Models\Core\Company;
 use App\Models\Facturation\SalesDocumentLine;
 use App\Models\RH\Timesheet;
@@ -35,12 +36,18 @@ class ProductionOrder extends Model
             'actual_end_date' => 'date',
             'quantity' => 'decimal:2',
             'total_labor_cost' => 'decimal:2',
+            'notified_at' => 'datetime',
         ];
     }
 
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 
     public function product(): BelongsTo
@@ -67,5 +74,17 @@ class ProductionOrder extends Model
     public function isLocked(): bool
     {
         return in_array($this->status, [ProductionOrderStatus::Completed, ProductionOrderStatus::Cancelled]);
+    }
+
+    /**
+     * Recalcule le coût total de la main-d'œuvre pour cet Ordre de Fabrication.
+     */
+    public function recalculateLaborCost(): void
+    {
+        $totalCost = $this->timesheets->sum(function (Timesheet $timesheet) {
+            return $timesheet->cost;
+        });
+
+        $this->updateQuietly(['total_labor_cost' => $totalCost]);
     }
 }

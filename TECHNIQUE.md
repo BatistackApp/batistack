@@ -20,6 +20,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Implémentation Technique** :
     - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé, **en prenant en compte les majorations pour les heures supplémentaires, de nuit et du dimanche**.
     - **Géocodage** : Une automatisation (probablement un observer sur le modèle `Chantier`) convertit l'adresse d'un chantier en coordonnées GPS lors de sa création ou modification.
+    - **Coûts de Location** : Le modèle `Chantiers` inclut `total_rental_cost`, mis à jour automatiquement par l'observer `app/Observers/Locations/RentalContractObserver.php` lors des modifications des contrats de location liés.
 
 ---
 
@@ -76,17 +77,19 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Centralisation des écritures comptables, génération des journaux, exports légaux (FEC) et rapports comptables.
 - **Implémentation Technique** :
-    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `SalesDocument`, une `PurchaseDocument`, une `BankTransaction`). Il inclut un `tier_id` pour l'association directe avec un `Tiers`.
+    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `SalesDocument`, une `PurchaseDocument`, une `BankTransaction`, un `RentalContract`). Il inclut un `tier_id` pour l'association directe avec un `Tiers`.
     - **Services de Comptabilisation** : La logique est déportée dans des services spécialisés :
         - `app/Services/Comptabilite/ExpenseComptaService.php` : Gère la comptabilisation des notes de frais.
         - `app/Services/Comptabilite/UlysComptaService.php` : Gère la comptabilisation des dépenses de flotte Ulys.
         - `app/Services/Comptabilite/SalesDocumentComptaService.php` : Gère la comptabilisation des documents de vente.
         - `app/Services/Comptabilite/PurchaseDocumentComptaService.php` : Gère la comptabilisation des documents d'achat.
         - `app/Services/Comptabilite/BankTransactionComptaService.php` : Gère la comptabilisation des transactions bancaires.
+        - `app/Services/Comptabilite/RentalContractComptaService.php` : Gère la comptabilisation des contrats de location.
     - **Export FEC** :
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
         - Il remplit les champs `CompAuxNum` et `CompAuxLib` avec les informations du `Tiers` associé à l'écriture.
+        - Il assure une numérotation séquentielle et ininterrompue du champ `EcritureNum` par journal et par mois, pour une conformité totale avec la norme DGFIP.
     - **Reporting Comptable** :
         - Le service `app/Services/Comptabilite/ComptaReportingService.php` fournit des méthodes pour récupérer les écritures par journal (`getJournalEntries`) ou par compte (`getGeneralLedgerEntries`), et calculer les soldes (`getAccountBalanceAtDate`).
         - **Génération de Rapports Automatisée** : La commande `app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php` utilise ce service pour générer des fichiers CSV pour les journaux et le Grand Livre pour une période donnée. Cette commande est planifiée pour s'exécuter régulièrement (ex: mensuellement) via `routes/console.php`.
@@ -151,9 +154,12 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Gestion des contrats de location de matériel.
 - **Implémentation Technique** :
-    - **Modèle Principal** : `app/Models/Locations/RentalContract.php` pour gérer les contrats de location.
-    - **Statuts** : `app/Enums/Locations/RentalContractStatus.php` pour suivre l'état du contrat (Brouillon, Actif, Terminé, Annulé, En retard).
-    - **Automatisation (Calcul du montant)** : L'observer `app/Observers/Locations/RentalContractObserver.php` calcule automatiquement le montant total du contrat en fonction du tarif journalier et des dates.
+    - **Structure** :
+        - **Modèles** : `app/Models/Locations/RentalContract.php` et `app/Models/Locations/RentalContractLine.php`.
+        - **Statuts** : `app/Enums/Locations/RentalContractStatus.php`.
+    - **Automatisation (Calcul des Totaux)** : L'observer `app/Observers/Locations/RentalContractLineObserver.php` recalcule les totaux du contrat (`total_ht`, `total_ttc`) à chaque modification d'une ligne.
+    - **Automatisation (Comptabilisation)** : L'observer `app/Observers/Locations/RentalContractObserver.php` déclenche le service `app/Services/Comptabilite/RentalContractComptaService.php` lorsque le statut du contrat passe à `Active`.
+    - **Intégration Coûts Chantiers** : L'observer `app/Observers/Locations/RentalContractObserver.php` met à jour le `total_rental_cost` sur le `Chantier` associé lors des modifications du contrat.
 
 ---
 
@@ -233,7 +239,8 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | GPAO/OF | database/migrations/2024_01_01_000002_add_production_order_id_to_timesheets_table.php | Migration pour lier les pointages aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000003_add_total_labor_cost_to_production_orders_table.php | Migration pour ajouter le coût de la main-d'œuvre aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000004_add_sales_document_line_id_to_production_orders_table.php | Migration pour lier les ordres de fabrication aux lignes de commande client. |
-| Locations/Base | database/migrations/2024_01_01_000005_create_rental_contracts_table.php | Migration pour la table des contrats de location. |
 | Locations/Base | app/Models/Locations/RentalContract.php | Modèle principal des contrats de location. |
-| Locations/Base | app/Enums/Locations/RentalContractStatus.php | Enum des statuts des contrats de location. |
-| Locations/Base | app/Observers/Locations/RentalContractObserver.php | Gère le calcul automatique du montant total d'un contrat de location. |
+| Locations/Base | app/Models/Locations/RentalContractLine.php | Modèle pour les lignes de contrat de location. |
+| Locations/Automation | app/Observers/Locations/RentalContractLineObserver.php | Recalcule les totaux du contrat à chaque modification d'une ligne. |
+| Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
+| Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |

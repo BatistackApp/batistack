@@ -6,6 +6,7 @@ use App\Enums\GPAO\ProductionOrderStatus;
 use App\Models\GPAO\ProductionOrder;
 use App\Models\Articles\InventoryStock;
 use App\Models\Articles\Product;
+use App\Models\RH\Team;
 use App\Notifications\GPAO\ProductionOrderNotification; // Import the notification
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -67,18 +68,23 @@ class ProductionOrderObserver
                 DB::transaction(function () use ($productionOrder) {
                     $productToProduce = $productionOrder->product;
                     $quantityProduced = $productionOrder->quantity;
+                    $warehouseId = $productionOrder->warehouse_id;
+
+                    if (!$warehouseId) {
+                        throw new Exception("Aucun dépôt n'est spécifié pour l'Ordre de Fabrication {$productionOrder->reference}.");
+                    }
 
                     // 1. Décrémenter les stocks des composants
                     foreach ($productToProduce->children as $component) {
                         $requiredQuantity = $component->pivot->quantity * $quantityProduced;
 
-                        // Trouver un stock pour le composant (simplifié : prend le premier trouvé ou le stock par défaut)
+                        // Trouver le stock du composant dans le dépôt spécifié
                         $stock = InventoryStock::where('product_id', $component->id)
-                            ->where('company_id', $productionOrder->company_id)
-                            ->first(); // TODO: Gérer le choix du dépôt de manière plus sophistiquée
+                            ->where('warehouse_id', $warehouseId)
+                            ->first();
 
                         if (!$stock) {
-                            throw new Exception("Stock introuvable pour le composant {$component->name} (ID: {$component->id}).");
+                            throw new Exception("Stock introuvable pour le composant {$component->name} (ID: {$component->id}) dans le dépôt spécifié.");
                         }
 
                         if ($stock->quantity_on_hand < $requiredQuantity) {
@@ -91,15 +97,15 @@ class ProductionOrderObserver
 
                     // 2. Incrémenter le stock du produit fini
                     $finishedProductStock = InventoryStock::where('product_id', $productToProduce->id)
-                        ->where('company_id', $productionOrder->company_id)
-                        ->first(); // TODO: Gérer le choix du dépôt de manière plus sophistiquée
+                        ->where('warehouse_id', $warehouseId)
+                        ->first();
 
                     if (!$finishedProductStock) {
-                        // Si pas de stock existant, le créer (ou lever une exception selon la politique)
+                        // Si pas de stock existant, le créer dans le dépôt spécifié
                         $finishedProductStock = InventoryStock::create([
                             'product_id' => $productToProduce->id,
                             'company_id' => $productionOrder->company_id,
-                            'warehouse_id' => 1, // TODO: Définir un dépôt par défaut ou le choisir
+                            'warehouse_id' => $warehouseId,
                             'quantity_on_hand' => 0,
                             'min_stock_level' => 0,
                         ]);
@@ -136,9 +142,21 @@ class ProductionOrderObserver
     {
         $assignedTo = $productionOrder->assignedTo;
 
-        if ($assignedTo && method_exists($assignedTo, 'notify')) {
+        if (!$assignedTo) {
+            return;
+        }
+
+        // Si l'assignation est une équipe, notifier tous les membres
+        if ($assignedTo instanceof Team) {
+            foreach ($assignedTo->members as $member) {
+                if (method_exists($member, 'notify')) {
+                    $member->notify(new ProductionOrderNotification($productionOrder, $type));
+                }
+            }
+        }
+        // Si c'est un employé ou un autre type d'entité notifiable
+        elseif (method_exists($assignedTo, 'notify')) {
             $assignedTo->notify(new ProductionOrderNotification($productionOrder, $type));
         }
-        // TODO: Si assignedTo est une équipe, notifier tous les membres de l'équipe
     }
 }
