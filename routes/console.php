@@ -77,8 +77,8 @@ Schedule::command("compta:check-integrity")
     ->sendOutputTo(storage_path('logs/schedule/compta-check-integrity.log'))
     ->description("Vérifie que la comptabilité est équilibrée (Débit = Crédit) pour chaque entreprise.");
 
-Schedule::command('compta:generate-reports')
-    ->monthlyOn(1, '03:00')
+Schedule::command('compta:generate-reports', ['--month' => now()->subMonth()->month, '--year' => now()->subMonth()->year])
+    ->monthlyOn(5, '03:00')
     ->onOneServer()
     ->withoutOverlapping()
     ->sendOutputTo(storage_path('logs/schedule/compta-generate-reports.log'))

@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Paie;
 
+use App\Enums\Paie\PayrollExportFormat; // Import de l'Enum
 use App\Models\NoteFrais\Expense;
 use App\Models\Paie\PayrollSlip;
 use App\Services\Paie\PayrollCalculator;
@@ -20,8 +21,10 @@ class GeneratePayrollExportJob implements ShouldQueue
     /**
      * Create a new job instance.
      */
-    public function __construct(public PayrollSlip $slip)
-    {
+    public function __construct(
+        public PayrollSlip $slip,
+        public PayrollExportFormat $format = PayrollExportFormat::GenericCSV // Ajout du paramètre de format
+    ) {
         //
     }
 
@@ -34,9 +37,9 @@ class GeneratePayrollExportJob implements ShouldQueue
             // 1. Calculer (ou recalculer) le bulletin de paie
             $calculator->calculate($this->slip);
 
-            // 2. Générer le contenu du fichier CSV
-            $csvContent = $exportService->generateCsv($this->slip);
-            $fileName = $exportService->generateFileName($this->slip);
+            // 2. Générer le contenu du fichier CSV en utilisant le format spécifié
+            $csvContent = $exportService->generateCsv($this->slip, $this->format);
+            $fileName = $exportService->generateFileName($this->slip, $this->format); // Passer le format au nom de fichier
 
             // 3. Attacher le fichier CSV au bulletin de paie en utilisant Spatie Media Library
             $this->slip->addMediaFromString($csvContent)
@@ -59,10 +62,10 @@ class GeneratePayrollExportJob implements ShouldQueue
                     }
                 });
 
-            Log::info("Export de paie généré avec succès pour le bulletin #{$this->slip->id}");
+            Log::info("Export de paie généré avec succès pour le bulletin #{$this->slip->id} au format {$this->format->value}.");
 
         } catch (\Throwable $e) {
-            Log::error("Erreur lors de la génération de l'export de paie pour le bulletin #{$this->slip->id}: " . $e->getMessage());
+            Log::error("Erreur lors de la génération de l'export de paie pour le bulletin #{$this->slip->id} au format {$this->format->value}: " . $e->getMessage());
             // Gérer l'échec du job
             $this->fail($e);
         }

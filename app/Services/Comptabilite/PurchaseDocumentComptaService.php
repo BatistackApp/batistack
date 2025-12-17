@@ -22,9 +22,7 @@ class PurchaseDocumentComptaService
     public function postPurchaseDocumentEntry(PurchaseDocument $purchaseDocument): void
     {
         // Vérifier si les écritures ont déjà été passées pour ce document
-        if (ComptaEntry::where('sourceable_type', PurchaseDocument::class)
-            ->where('sourceable_id', $purchaseDocument->id)
-            ->exists()) {
+        if ($purchaseDocument->is_posted_to_compta) {
             throw new Exception("Les écritures comptables pour le document d'achat {$purchaseDocument->reference} ont déjà été passées.");
         }
 
@@ -109,8 +107,8 @@ class PurchaseDocumentComptaService
                 'sourceable_id' => $purchaseDocument->id,
             ]);
 
-            // Optionnel : Mettre à jour le statut du document d'achat pour indiquer qu'il a été comptabilisé
-            // $purchaseDocument->update(['is_posted_to_compta' => true]); // Nécessiterait un champ dans la table purchase_documents
+            // Mettre à jour le statut du document d'achat pour indiquer qu'il a été comptabilisé
+            $purchaseDocument->update(['is_posted_to_compta' => true]);
         });
     }
 }
