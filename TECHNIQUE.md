@@ -77,7 +77,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Centralisation des écritures comptables, génération des journaux, exports légaux (FEC) et rapports comptables.
 - **Implémentation Technique** :
-    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `SalesDocument`, une `PurchaseDocument`, une `BankTransaction`, un `RentalContract`). Il inclut un `tier_id` pour l'association directe avec un `Tiers`.
+    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `SalesDocument`, une `PurchaseDocument`, une `BankTransaction`, un `RentalContract`, une `Intervention`). Il inclut un `tier_id` pour l'association directe avec un `Tiers`.
     - **Services de Comptabilisation** : La logique est déportée dans des services spécialisés :
         - `app/Services/Comptabilite/ExpenseComptaService.php` : Gère la comptabilisation des notes de frais.
         - `app/Services/Comptabilite/UlysComptaService.php` : Gère la comptabilisation des dépenses de flotte Ulys.
@@ -85,6 +85,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - `app/Services/Comptabilite/PurchaseDocumentComptaService.php` : Gère la comptabilisation des documents d'achat.
         - `app/Services/Comptabilite/BankTransactionComptaService.php` : Gère la comptabilisation des transactions bancaires.
         - `app/Services/Comptabilite/RentalContractComptaService.php` : Gère la comptabilisation des contrats de location.
+        - `app/Services/Comptabilite/InterventionComptaService.php` : Gère la comptabilisation des coûts des interventions.
     - **Export FEC** :
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
@@ -161,6 +162,22 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
     - **Automatisation (Calcul des Totaux)** : L'observer `app/Observers/Locations/RentalContractLineObserver.php` recalcule les totaux du contrat (`total_ht`, `total_ttc`) à chaque modification d'une ligne.
     - **Automatisation (Comptabilisation)** : L'observer `app/Observers/Locations/RentalContractObserver.php` déclenche le service `app/Services/Comptabilite/RentalContractComptaService.php` lorsque le statut du contrat passe à `Active`.
     - **Intégration Coûts Chantiers** : L'observer `app/Observers/Locations/RentalContractObserver.php` met à jour le `total_rental_cost` sur le `Chantier` associé lors des modifications du contrat.
+
+---
+
+### Module : Interventions
+
+- **Description Fonctionnelle** : Gestion et suivi des interventions de maintenance sur les sites ou chantiers.
+- **Implémentation Technique** :
+    - **Structure** :
+        - **Modèles** : `app/Models/Interventions/Intervention.php` et `app/Models/Interventions/InterventionProduct.php` (pivot).
+        - **Statuts** : `app/Enums/Interventions/InterventionStatus.php`.
+    - **Automatisation (Calcul des Coûts)** :
+        - **Main-d'œuvre** : L'observer `app/Observers/RH/TimesheetObserver.php` recalcule le `total_labor_cost` de l'intervention à chaque modification d'un pointage lié.
+        - **Matériaux** : L'observer `app/Observers/Interventions/InterventionProductObserver.php` recalcule le `total_material_cost` et met à jour les stocks à chaque modification des pièces utilisées.
+    - **Automatisation (Notifications)** : L'observer `app/Observers/Interventions/InterventionObserver.php` envoie des notifications (`app/Notifications/Interventions/InterventionNotification.php`) lors de la création ou du changement de statut.
+    - **Automatisation (Comptabilisation)** : L'observer `app/Observers/Interventions/InterventionObserver.php` déclenche le service `app/Services/Comptabilite/InterventionComptaService.php` lorsque le statut passe à `Completed`.
+    - **Automatisation (Facturation)** : L'observer `app/Observers/Interventions/InterventionObserver.php` déclenche la méthode `generateSalesDocument()` du modèle `Intervention` lorsque le statut passe à `Completed` et que l'intervention est facturable.
 
 ---
 
@@ -246,3 +263,9 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
 | Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |
 | GPAO/OF | database/migrations/2025_12_12_270000_add_total_material_cost_to_production_orders_table.php | Migration pour ajouter le coût des matériaux aux ordres de fabrication. |
+| Interventions/Base | app/Models/Interventions/Intervention.php | Modèle principal des interventions. |
+| Interventions/Base | app/Models/Interventions/InterventionProduct.php | Modèle pivot pour les produits utilisés dans une intervention. |
+| Interventions/Automation | app/Observers/Interventions/InterventionObserver.php | Déclenche les notifications et la comptabilisation. |
+| Interventions/Automation | app/Observers/Interventions/InterventionProductObserver.php | Recalcule le coût des matériaux et met à jour les stocks. |
+| Interventions/Compta | app/Services/Comptabilite/InterventionComptaService.php | Service de comptabilisation des coûts des interventions. |
+| Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |

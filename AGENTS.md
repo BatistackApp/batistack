@@ -38,10 +38,12 @@ B. MODULES EN COURS (Focus Actuel)
 | Flottes | Avancé : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. | |
 | GPAO | Avancé : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre et des matériaux, et les notifications d'assignation et de retard. | |
 | Locations | En cours : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique. | |
+| Interventions | En cours : Gestion des interventions, avec suivi des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures. | |
 
 C. MODULES À FAIRE (Priorités Futures)
 
-Intervention : Gestion des interventions sur sites ou chantiers.
+| Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
+|---|---|---|
 
 3. RÉFÉRENCES CODE CLÉS (Pour le Contexte)
 
@@ -116,6 +118,12 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
 | Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |
 | GPAO/OF | database/migrations/2025_12_12_270000_add_total_material_cost_to_production_orders_table.php | Migration pour ajouter le coût des matériaux aux ordres de fabrication. |
+| Interventions/Base | app/Models/Interventions/Intervention.php | Modèle principal des interventions. |
+| Interventions/Base | app/Models/Interventions/InterventionProduct.php | Modèle pivot pour les produits utilisés dans une intervention. |
+| Interventions/Automation | app/Observers/Interventions/InterventionObserver.php | Déclenche les notifications et la comptabilisation. |
+| Interventions/Automation | app/Observers/Interventions/InterventionProductObserver.php | Recalcule le coût des matériaux et met à jour les stocks. |
+| Interventions/Compta | app/Services/Comptabilite/InterventionComptaService.php | Service de comptabilisation des coûts des interventions. |
+| Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |
 
 4. RÔLES UTILISATEURS (AGENTS)
 
@@ -130,3 +138,4 @@ Intervention : Gestion des interventions sur sites ou chantiers.
 | Gestionnaire de Flotte / Matériel | Gestion des véhicules, engins, maintenances, assurances. |
 | Responsable GPAO | Gestion des ordres de fabrication, planification, suivi de production. |
 | Opérateur de Production | Consultation des ordres de fabrication assignés, saisie des temps de production. |
+| Technicien | Consultation et suivi des interventions assignées. |
