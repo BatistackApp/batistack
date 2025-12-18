@@ -32,13 +32,47 @@ class Chantiers extends Model
             'end_date_real' => 'date',
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
+            'total_labor_cost' => 'decimal:2',
             'total_rental_cost' => 'decimal:2',
             'total_sales_revenue' => 'decimal:2',
             'total_purchase_cost' => 'decimal:2',
+            'total_material_cost' => 'decimal:2',
+            'budgeted_revenue' => 'decimal:2',
+            'budgeted_labor_cost' => 'decimal:2',
+            'budgeted_material_cost' => 'decimal:2',
+            'budgeted_rental_cost' => 'decimal:2',
             'status' => ChantiersStatus::class,
             'is_overdue' => 'boolean'
         ];
     }
+
+    // --- ACCESSEURS POUR LE SUIVI DE RENTABILITÉ ---
+
+    public function getTotalRealCostAttribute(): float
+    {
+        return $this->total_labor_cost + $this->total_material_cost + $this->total_rental_cost + $this->total_purchase_cost;
+    }
+
+    public function getTotalBudgetedCostAttribute(): float
+    {
+        return $this->budgeted_labor_cost + $this->budgeted_material_cost + $this->budgeted_rental_cost;
+    }
+
+    public function getRealMarginAttribute(): float
+    {
+        return $this->total_sales_revenue - $this->total_real_cost;
+    }
+
+    public function getBudgetedMarginAttribute(): float
+    {
+        return $this->budgeted_revenue - $this->total_budgeted_cost;
+    }
+
+    public function getMarginDifferenceAttribute(): float
+    {
+        return $this->real_margin - $this->budgeted_margin;
+    }
+
 
     // Helper pour l'adresse complète
     public function getFullAddressAttribute(): string
