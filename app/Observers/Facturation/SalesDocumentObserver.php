@@ -59,6 +59,13 @@ class SalesDocumentObserver
         }
     }
 
+    public function created(SalesDocument $document): void
+    {
+        if ($document->type === SalesDocumentType::Invoice && $document->chantiers_id) {
+            $document->chantiers->increment('total_sales_revenue', $document->total_ht);
+        }
+    }
+
     public function updated(SalesDocument $document): void
     {
         // Si le statut vient de changer pour "Overdue"
@@ -69,6 +76,37 @@ class SalesDocumentObserver
             $admins = $document->company->users;
 
             Notification::send($admins, new InvoiceOverdueNotification($document));
+        }
+
+        // Si le coût a changé
+        if ($document->type === SalesDocumentType::Invoice && $document->isDirty('total_ht')) {
+            $oldCost = $document->getOriginal('total_ht');
+            $newCost = $document->total_ht;
+            if ($document->chantiers_id) {
+                $document->chantiers->increment('total_sales_revenue', $newCost - $oldCost);
+            }
+        }
+
+        // Si le chantier a changé
+        if ($document->type === SalesDocumentType::Invoice && $document->isDirty('chantiers_id')) {
+            // Retirer l'ancien coût de l'ancien chantier
+            if ($document->getOriginal('chantiers_id')) {
+                $oldChantier = \App\Models\Chantiers\Chantiers::find($document->getOriginal('chantiers_id'));
+                if ($oldChantier) {
+                    $oldChantier->decrement('total_sales_revenue', $document->getOriginal('total_ht'));
+                }
+            }
+            // Ajouter le nouveau coût au nouveau chantier
+            if ($document->chantiers_id) {
+                $document->chantiers->increment('total_sales_revenue', $document->total_ht);
+            }
+        }
+    }
+
+    public function deleted(SalesDocument $document): void
+    {
+        if ($document->type === SalesDocumentType::Invoice && $document->chantiers_id) {
+            $document->chantiers->decrement('total_sales_revenue', $document->total_ht);
         }
     }
 

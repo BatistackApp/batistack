@@ -9,6 +9,47 @@ use Illuminate\Support\Facades\Log;
 
 class PurchaseDocumentObserver
 {
+    public function created(PurchaseDocument $document): void
+    {
+        if ($document->chantiers_id) {
+            $document->chantiers->increment('total_purchase_cost', $document->total_ht);
+        }
+    }
+
+    public function updated(PurchaseDocument $document): void
+    {
+        // Si le coût a changé
+        if ($document->isDirty('total_ht')) {
+            $oldCost = $document->getOriginal('total_ht');
+            $newCost = $document->total_ht;
+            if ($document->chantiers_id) {
+                $document->chantiers->increment('total_purchase_cost', $newCost - $oldCost);
+            }
+        }
+
+        // Si le chantier a changé
+        if ($document->isDirty('chantiers_id')) {
+            // Retirer l'ancien coût de l'ancien chantier
+            if ($document->getOriginal('chantiers_id')) {
+                $oldChantier = \App\Models\Chantiers\Chantiers::find($document->getOriginal('chantiers_id'));
+                if ($oldChantier) {
+                    $oldChantier->decrement('total_purchase_cost', $document->getOriginal('total_ht'));
+                }
+            }
+            // Ajouter le nouveau coût au nouveau chantier
+            if ($document->chantiers_id) {
+                $document->chantiers->increment('total_purchase_cost', $document->total_ht);
+            }
+        }
+    }
+
+    public function deleted(PurchaseDocument $document): void
+    {
+        if ($document->chantiers_id) {
+            $document->chantiers->decrement('total_purchase_cost', $document->total_ht);
+        }
+    }
+
     /**
      * Handle the PurchaseDocument "saved" event.
      * This event is fired after a model is created or updated.

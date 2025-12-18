@@ -33,6 +33,8 @@ class Chantiers extends Model
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
             'total_rental_cost' => 'decimal:2',
+            'total_sales_revenue' => 'decimal:2',
+            'total_purchase_cost' => 'decimal:2',
             'status' => ChantiersStatus::class,
             'is_overdue' => 'boolean'
         ];
