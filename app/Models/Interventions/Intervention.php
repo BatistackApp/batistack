@@ -2,10 +2,13 @@
 
 namespace App\Models\Interventions;
 
+use App\Enums\Facturation\SalesDocumentStatus;
+use App\Enums\Facturation\SalesDocumentType;
 use App\Enums\Interventions\InterventionStatus;
 use App\Models\Articles\Product;
 use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
+use App\Models\Facturation\SalesDocument;
 use App\Models\RH\Employee;
 use App\Models\RH\Timesheet;
 use App\Models\Tiers\Tiers;
@@ -29,6 +32,7 @@ class Intervention extends Model
     {
         return [
             'status' => InterventionStatus::class,
+            'is_billable' => 'boolean',
             'planned_start_date' => 'date',
             'planned_end_date' => 'date',
             'actual_start_date' => 'date',
@@ -71,6 +75,11 @@ class Intervention extends Model
             ->withPivot('quantity');
     }
 
+    public function salesDocument(): BelongsTo
+    {
+        return $this->belongsTo(SalesDocument::class);
+    }
+
     /**
      * Recalcule le coût total de la main-d'œuvre pour cette Intervention.
      */
@@ -93,5 +102,53 @@ class Intervention extends Model
         });
 
         $this->updateQuietly(['total_material_cost' => $totalCost]);
+    }
+
+    /**
+     * Génère une facture à partir de l'intervention.
+     */
+    public function generateSalesDocument(): ?SalesDocument
+    {
+        if (!$this->is_billable || $this->sales_document_id) {
+            return null;
+        }
+
+        $salesDocument = SalesDocument::create([
+            'company_id' => $this->company_id,
+            'tiers_id' => $this->client_id,
+            'chantiers_id' => $this->chantier_id,
+            'type' => SalesDocumentType::Invoice,
+            'status' => SalesDocumentStatus::Draft,
+            'date' => now(),
+            'due_date' => now()->addDays(30),
+            'reference' => "FAC-INT-{$this->id}",
+        ]);
+
+        // Ajouter les lignes de main-d'œuvre
+        if ($this->total_labor_cost > 0) {
+            $salesDocument->lines()->create([
+                'description' => 'Main d\'œuvre',
+                'quantity' => 1,
+                'unit_price' => $this->total_labor_cost, // TODO: Appliquer une marge
+                'vat_rate' => 20.00,
+            ]);
+        }
+
+        // Ajouter les lignes de matériaux
+        foreach ($this->products as $product) {
+            $salesDocument->lines()->create([
+                'product_id' => $product->id,
+                'description' => $product->name,
+                'quantity' => $product->pivot->quantity,
+                'unit_price' => $product->selling_price ?? $product->buying_price, // TODO: Appliquer une marge
+                'vat_rate' => 20.00,
+            ]);
+        }
+
+        $salesDocument->recalculate();
+
+        $this->update(['sales_document_id' => $salesDocument->id]);
+
+        return $salesDocument;
     }
 }

@@ -26,14 +26,25 @@ class InterventionObserver
         if ($intervention->isDirty('status')) {
             $this->sendNotification($intervention, 'status_changed');
 
-            // Si le statut passe à "Terminé", comptabiliser les coûts
+            // Si le statut passe à "Terminé"
             if ($intervention->status === InterventionStatus::Completed) {
+                // Comptabiliser les coûts
                 try {
                     $comptaService = new InterventionComptaService();
                     $comptaService->postInterventionCosts($intervention);
                     Log::info("Coûts pour l'intervention {$intervention->id} comptabilisés avec succès.");
                 } catch (\Exception $e) {
                     Log::error("Erreur lors de la comptabilisation des coûts pour l'intervention {$intervention->id}: " . $e->getMessage());
+                }
+
+                // Générer la facture si l'intervention est facturable
+                if ($intervention->is_billable) {
+                    try {
+                        $intervention->generateSalesDocument();
+                        Log::info("Facture générée pour l'intervention {$intervention->id}.");
+                    } catch (\Exception $e) {
+                        Log::error("Erreur lors de la génération de la facture pour l'intervention {$intervention->id}: " . $e->getMessage());
+                    }
                 }
             }
         }
