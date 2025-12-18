@@ -113,6 +113,9 @@ class Intervention extends Model
             return null;
         }
 
+        // TODO: Rendre la marge configurable (ex: au niveau de l'entreprise ou du client)
+        $marginRate = 1.20; // Marge de 20%
+
         $salesDocument = SalesDocument::create([
             'company_id' => $this->company_id,
             'tiers_id' => $this->client_id,
@@ -129,18 +132,19 @@ class Intervention extends Model
             $salesDocument->lines()->create([
                 'description' => 'Main d\'œuvre',
                 'quantity' => 1,
-                'unit_price' => $this->total_labor_cost, // TODO: Appliquer une marge
+                'unit_price' => $this->total_labor_cost * $marginRate,
                 'vat_rate' => 20.00,
             ]);
         }
 
         // Ajouter les lignes de matériaux
         foreach ($this->products as $product) {
+            $sellingPrice = $product->selling_price > 0 ? $product->selling_price : ($product->buying_price * $marginRate);
             $salesDocument->lines()->create([
                 'product_id' => $product->id,
                 'description' => $product->name,
                 'quantity' => $product->pivot->quantity,
-                'unit_price' => $product->selling_price ?? $product->buying_price, // TODO: Appliquer une marge
+                'unit_price' => $sellingPrice,
                 'vat_rate' => 20.00,
             ]);
         }
