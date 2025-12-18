@@ -12,7 +12,6 @@ use App\Models\Tiers\Tiers;
 use App\Observers\Interventions\InterventionObserver;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -36,6 +35,7 @@ class Intervention extends Model
             'actual_end_date' => 'date',
             'total_labor_cost' => 'decimal:2',
             'total_material_cost' => 'decimal:2',
+            'costs_posted_to_compta' => 'boolean',
         ];
     }
 
