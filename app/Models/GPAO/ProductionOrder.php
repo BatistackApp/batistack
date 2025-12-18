@@ -24,6 +24,7 @@ class ProductionOrder extends Model
 
     protected $guarded = [];
 
+
     protected function casts(): array
     {
         return [
@@ -36,6 +37,7 @@ class ProductionOrder extends Model
             'actual_end_date' => 'date',
             'quantity' => 'decimal:2',
             'total_labor_cost' => 'decimal:2',
+            'total_material_cost' => 'decimal:2',
             'notified_at' => 'datetime',
         ];
     }

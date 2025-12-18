@@ -3,6 +3,7 @@
 namespace App\Models\Interventions;
 
 use App\Enums\Interventions\InterventionStatus;
+use App\Models\Articles\Product;
 use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
 use App\Models\RH\Employee;
@@ -11,9 +12,9 @@ use App\Models\Tiers\Tiers;
 use App\Observers\Interventions\InterventionObserver;
 use App\Trait\BelongsToCompany;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -33,6 +34,8 @@ class Intervention extends Model
             'actual_start_date' => 'date',
             'actual_end_date' => 'date',
             'total_labor_cost' => 'decimal:2',
+            'total_material_cost' => 'decimal:2',
+            'costs_posted_to_compta' => 'boolean',
         ];
     }
 
@@ -61,6 +64,13 @@ class Intervention extends Model
         return $this->hasMany(Timesheet::class);
     }
 
+    public function products(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'intervention_product')
+            ->using(InterventionProduct::class) // Utilisation du modèle de pivot
+            ->withPivot('quantity');
+    }
+
     /**
      * Recalcule le coût total de la main-d'œuvre pour cette Intervention.
      */
@@ -71,5 +81,17 @@ class Intervention extends Model
         });
 
         $this->updateQuietly(['total_labor_cost' => $totalCost]);
+    }
+
+    /**
+     * Recalcule le coût total des matériaux pour cette Intervention.
+     */
+    public function recalculateMaterialCost(): void
+    {
+        $totalCost = $this->products->sum(function (Product $product) {
+            return $product->pivot->quantity * ($product->buying_price ?? 0);
+        });
+
+        $this->updateQuietly(['total_material_cost' => $totalCost]);
     }
 }
