@@ -11,7 +11,7 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
 ### Modules Stables
 
 - **CRM (Tiers)** : Gestion des clients, fournisseurs et sous-traitants.
-- **Chantiers** : Suivi des projets, incluant la gestion des coûts de main-d'œuvre qui sont mis à jour automatiquement via les fiches de pointage.
+- **Chantiers** : Suivi des projets, incluant la gestion des coûts de main-d'œuvre, des coûts de location, des revenus et des coûts d'achat, avec suivi budgétaire et génération de rapports de rentabilité (PDF/CSV).
 - **Articles & Stock** : Gestion du catalogue d'articles, des ouvrages (recettes) et du stock multi-dépôts.
 - **Commerce & Facturation** : Création de devis, factures, acomptes et suivi des paiements.
 - **Banque** : Gestion des comptes, synchronisation des transactions (via BridgeAPI) et rapprochement bancaire automatisé.

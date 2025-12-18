@@ -5,7 +5,7 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | Module | État d'Avancement | Priorité | Description Fonctionnelle |
 |---|---|---|---|
 | **Tiers (CRM)** | Stable | Basse | Gestion des clients, fournisseurs et sous-traitants. |
-| **Chantiers** | Stable | Basse | Suivi des projets, incluant la gestion des coûts de main-d'œuvre mis à jour automatiquement. |
+| **Chantiers** | Stable | Basse | Suivi des projets, incluant la gestion des coûts (main-d'œuvre, location, achats), le suivi budgétaire et la génération de rapports de rentabilité (PDF/CSV). |
 | **Articles & Stock** | Stable | Basse | Gestion du catalogue d'articles, des ouvrages (recettes) et du stock multi-dépôts. |
 | **Commerce / Facturation** | Stable | Basse | Création de devis, factures, acomptes et suivi des paiements. **Inclut désormais la gestion des factures fournisseurs.** |
 | **Banque** | Stable | Basse | Gestion des comptes, synchronisation des transactions et rapprochement bancaire automatisé. |

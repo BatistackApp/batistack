@@ -21,6 +21,10 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
     - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé, **en prenant en compte les majorations pour les heures supplémentaires, de nuit et du dimanche**.
     - **Géocodage** : Une automatisation (probablement un observer sur le modèle `Chantier`) convertit l'adresse d'un chantier en coordonnées GPS lors de sa création ou modification.
     - **Coûts de Location** : Le modèle `Chantiers` inclut `total_rental_cost`, mis à jour automatiquement par l'observer `app/Observers/Locations/RentalContractObserver.php` lors des modifications des contrats de location liés.
+    - **Suivi Budgétaire et Rentabilité** :
+        - Le modèle `Chantiers` inclut des champs pour les coûts réels (`total_labor_cost`, `total_material_cost`, `total_rental_cost`, `total_purchase_cost`) et budgétés (`budgeted_revenue`, `budgeted_labor_cost`, etc.).
+        - Des accesseurs (`getTotalRealCostAttribute`, `getRealMarginAttribute`, etc.) sont disponibles pour calculer en temps réel la marge et l'écart par rapport au budget.
+        - La commande `app/Console/Commands/Chantiers/GenerateProfitabilityReportCommand.php` génère des rapports de rentabilité en PDF et CSV pour un ou plusieurs chantiers.
 
 ---
 

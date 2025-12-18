@@ -58,6 +58,7 @@ C. MODULES À FAIRE (Priorités Futures)
 | Compta/Base | app/Models/Comptabilite/ComptaEntry.php | Modèle d'écriture comptable, inclut `tier_id` et relation `tier`. |
 | Compta/Reporting | app/Services/Comptabilite/ComptaReportingService.php | Service de récupération des données pour les journaux et le Grand Livre. |
 | Compta/Rapports | app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php | Commande Artisan pour générer les rapports comptables (journaux, grand livre) en CSV. Planifiée via `routes/console.php`. |
+| Chantiers/Reporting | app/Console/Commands/Chantiers/GenerateProfitabilityReportCommand.php | Commande Artisan pour générer les rapports de rentabilité (PDF, CSV) par chantier. |
 | Facturation/Vente | app/Models/Facturation/SalesDocument.php | Modèle principal des documents de vente. |
 | Facturation/Vente | app/Enums/Facturation/SalesDocumentStatus.php | Enum des statuts des documents de vente. |
 | Facturation/Vente | app/Services/Comptabilite/SalesDocumentComptaService.php | Service de comptabilisation des documents de vente. |
