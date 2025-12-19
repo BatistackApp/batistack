@@ -19,7 +19,6 @@ class ProductionOrderObserver
      */
     public function created(ProductionOrder $productionOrder): void
     {
-        // Envoyer une notification lors de la création d'un OF
         $this->sendNotification($productionOrder, 'created');
     }
 
@@ -28,6 +27,20 @@ class ProductionOrderObserver
      */
     public function updated(ProductionOrder $productionOrder): void
     {
+        // Si les coûts ont changé
+        if ($productionOrder->isDirty('total_labor_cost', 'total_material_cost')) {
+            $oldLaborCost = $productionOrder->getOriginal('total_labor_cost');
+            $newLaborCost = $productionOrder->total_labor_cost;
+            $oldMaterialCost = $productionOrder->getOriginal('total_material_cost');
+            $newMaterialCost = $productionOrder->total_material_cost;
+
+            if ($productionOrder->salesDocumentLine && $productionOrder->salesDocumentLine->salesDocument->chantiers_id) {
+                $chantier = $productionOrder->salesDocumentLine->salesDocument->chantiers;
+                $chantier->increment('total_labor_cost', $newLaborCost - $oldLaborCost);
+                $chantier->increment('total_material_cost', $newMaterialCost - $oldMaterialCost);
+            }
+        }
+
         // Si le statut a changé, envoyer une notification de changement de statut
         if ($productionOrder->isDirty('status')) {
             $this->sendNotification($productionOrder, 'status_changed');
@@ -136,8 +149,12 @@ class ProductionOrderObserver
     public function deleted(ProductionOrder $productionOrder): void
     {
         $this->sendNotification($productionOrder, 'deleted');
-        // Optionnel : Gérer l'annulation d'un OF terminé (remettre les stocks ?)
-        // C'est une logique complexe qui dépend des règles métier (ex: annulation possible si OF récent, sinon OD de correction)
+
+        if ($productionOrder->salesDocumentLine && $productionOrder->salesDocumentLine->salesDocument->chantiers_id) {
+            $chantier = $productionOrder->salesDocumentLine->salesDocument->chantiers;
+            $chantier->decrement('total_labor_cost', $productionOrder->total_labor_cost);
+            $chantier->decrement('total_material_cost', $productionOrder->total_material_cost);
+        }
     }
 
     /**
