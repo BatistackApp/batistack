@@ -275,3 +275,5 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Interventions/Automation | app/Observers/Interventions/InterventionProductObserver.php | Recalcule le coût des matériaux et met à jour les stocks. |
 | Interventions/Compta | app/Services/Comptabilite/InterventionComptaService.php | Service de comptabilisation des coûts des interventions. |
 | Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |
+| Chantiers/Reporting | app/Models/Chantiers/ChantierReport.php | Modèle pour historiser les rapports de rentabilité. |
+| Chantiers/Reporting | database/migrations/2025_12_12_330000_create_chantier_reports_table.php | Migration pour la table d'historisation des rapports. |
