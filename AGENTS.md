@@ -38,7 +38,7 @@ B. MODULES EN COURS (Focus Actuel)
 | Flottes | Avancé : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. | |
 | GPAO | Avancé : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre et des matériaux, et les notifications d'assignation et de retard. | |
 | Locations | En cours : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique. | |
-| Interventions | En cours : Gestion des interventions, avec suivi des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures. | |
+| Interventions | En cours : Gestion des interventions, avec suivi des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures avec marge configurable. | |
 
 C. MODULES À FAIRE (Priorités Futures)
 
