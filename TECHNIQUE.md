@@ -25,6 +25,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - Le modèle `Chantiers` inclut des champs pour les coûts réels (`total_labor_cost`, `total_material_cost`, `total_rental_cost`, `total_purchase_cost`) et budgétés (`budgeted_revenue`, `budgeted_labor_cost`, etc.).
         - Des accesseurs (`getTotalRealCostAttribute`, `getRealMarginAttribute`, etc.) sont disponibles pour calculer en temps réel la marge et l'écart par rapport au budget.
         - La commande `app/Console/Commands/Chantiers/GenerateProfitabilityReportCommand.php` génère des rapports de rentabilité en PDF et CSV pour un ou plusieurs chantiers.
+        - **Historisation** : Le modèle `app/Models/Chantiers/ChantierReport.php` stocke une référence à chaque rapport généré, assurant la traçabilité.
 
 ---
 
