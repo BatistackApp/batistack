@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Chantiers;
 
+use App\Models\Chantiers\ChantierReport;
 use App\Models\Chantiers\Chantiers;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
@@ -49,16 +50,22 @@ class GenerateProfitabilityReportCommand extends Command
     private function generatePdfReport(Chantiers $chantier): void
     {
         $html = $this->getPdfHtml($chantier);
-        $path = "reports/chantiers/{$chantier->id}/profitability_report_" . now()->format('Y-m-d') . ".pdf";
+        $path = "reports/chantiers/{$chantier->id}/profitability_report_" . now()->format('Y-m-d_H-i-s') . ".pdf";
 
         Browsershot::html($html)
             ->setPaperSize('a4')
             ->save(Storage::path($path));
+
+        ChantierReport::create([
+            'chantier_id' => $chantier->id,
+            'type' => 'pdf',
+            'path' => $path,
+        ]);
     }
 
     private function generateCsvReport(Chantiers $chantier): void
     {
-        $path = "reports/chantiers/{$chantier->id}/profitability_report_" . now()->format('Y-m-d') . ".csv";
+        $path = "reports/chantiers/{$chantier->id}/profitability_report_" . now()->format('Y-m-d_H-i-s') . ".csv";
         $csv = Writer::createFromString('');
         $csv->setDelimiter(';');
 
@@ -81,6 +88,12 @@ class GenerateProfitabilityReportCommand extends Command
         $csv->insertOne(['Marge', 'Marge Brute', $chantier->budgeted_margin, $chantier->real_margin, $chantier->margin_difference]);
 
         Storage::put($path, $csv->toString());
+
+        ChantierReport::create([
+            'chantier_id' => $chantier->id,
+            'type' => 'csv',
+            'path' => $path,
+        ]);
     }
 
     private function getPdfHtml(Chantiers $chantier): string
