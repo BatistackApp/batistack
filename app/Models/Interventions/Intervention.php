@@ -113,8 +113,9 @@ class Intervention extends Model
             return null;
         }
 
-        // TODO: Rendre la marge configurable (ex: au niveau de l'entreprise ou du client)
-        $marginRate = 1.20; // Marge de 20%
+        // Récupérer la marge depuis les paramètres de l'entreprise, avec une valeur par défaut
+        $marginPercentage = $this->company->default_intervention_margin ?? 20.00;
+        $marginRate = 1 + ($marginPercentage / 100);
 
         $salesDocument = SalesDocument::create([
             'company_id' => $this->company_id,
