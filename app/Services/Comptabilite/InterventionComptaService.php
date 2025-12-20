@@ -46,6 +46,7 @@ class InterventionComptaService
 
         DB::transaction(function () use ($intervention, $journal, $laborChargeAccount, $materialChargeAccount, $laborPayableAccount, $stockAccount) {
             $reference = "INT-COST-{$intervention->id}";
+            $pieceRef = "INT-{$intervention->id}";
 
             // Écriture pour le coût de la main-d'œuvre
             if ($intervention->total_labor_cost > 0) {
@@ -54,6 +55,7 @@ class InterventionComptaService
                     'company_id' => $intervention->company_id,
                     'journal_id' => $journal->id,
                     'account_id' => $laborChargeAccount->id,
+                    'tier_id' => $intervention->client_id, // Lien analytique avec le client
                     'date' => $intervention->actual_end_date ?? now(),
                     'label' => "Coût M.O. Intervention {$intervention->title}",
                     'debit' => $intervention->total_labor_cost,
@@ -61,12 +63,14 @@ class InterventionComptaService
                     'sourceable_type' => Intervention::class,
                     'sourceable_id' => $intervention->id,
                     'reference' => $reference,
+                    'piece_reference' => $pieceRef,
                 ]);
                 // Crédit : Compte de personnel à payer
                 ComptaEntry::create([
                     'company_id' => $intervention->company_id,
                     'journal_id' => $journal->id,
                     'account_id' => $laborPayableAccount->id,
+                    'tier_id' => $intervention->technician_id, // Lien avec le technicien
                     'date' => $intervention->actual_end_date ?? now(),
                     'label' => "Contrepartie M.O. Intervention {$intervention->title}",
                     'debit' => 0,
@@ -74,6 +78,7 @@ class InterventionComptaService
                     'sourceable_type' => Intervention::class,
                     'sourceable_id' => $intervention->id,
                     'reference' => $reference,
+                    'piece_reference' => $pieceRef,
                 ]);
             }
 
@@ -84,6 +89,7 @@ class InterventionComptaService
                     'company_id' => $intervention->company_id,
                     'journal_id' => $journal->id,
                     'account_id' => $materialChargeAccount->id,
+                    'tier_id' => $intervention->client_id,
                     'date' => $intervention->actual_end_date ?? now(),
                     'label' => "Coût Matériaux Intervention {$intervention->title}",
                     'debit' => $intervention->total_material_cost,
@@ -91,6 +97,7 @@ class InterventionComptaService
                     'sourceable_type' => Intervention::class,
                     'sourceable_id' => $intervention->id,
                     'reference' => $reference,
+                    'piece_reference' => $pieceRef,
                 ]);
                 // Crédit : Compte de stock
                 ComptaEntry::create([
@@ -104,6 +111,7 @@ class InterventionComptaService
                     'sourceable_type' => Intervention::class,
                     'sourceable_id' => $intervention->id,
                     'reference' => $reference,
+                    'piece_reference' => $pieceRef,
                 ]);
             }
 
