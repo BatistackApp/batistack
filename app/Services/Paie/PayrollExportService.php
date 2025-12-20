@@ -23,6 +23,7 @@ class PayrollExportService
         $delimiter = $config['delimiter'] ?? ';';
         $headers = $config['headers'] ?? [];
         $mapping = $config['mapping'] ?? [];
+        $codeMapping = $config['code_mapping'] ?? [];
 
         $csvData = [];
         $csvData[] = $headers;
@@ -31,7 +32,7 @@ class PayrollExportService
             $row = [];
             foreach ($headers as $header) {
                 $source = $mapping[$header] ?? null;
-                $row[] = $this->resolveValue($source, $slip, $variable);
+                $row[] = $this->resolveValue($source, $slip, $variable, $codeMapping);
             }
             $csvData[] = $row;
         }
@@ -39,7 +40,7 @@ class PayrollExportService
         return $this->createCsvString($csvData, $delimiter);
     }
 
-    private function resolveValue(?string $source, PayrollSlip $slip, PayrollVariable $variable)
+    private function resolveValue(?string $source, PayrollSlip $slip, PayrollVariable $variable, array $codeMapping = [])
     {
         if ($source === null) {
             return '';
@@ -47,7 +48,7 @@ class PayrollExportService
 
         // Gérer les directives spéciales
         if (str_starts_with($source, '@')) {
-            return $this->resolveDirective($source, $variable);
+            return $this->resolveDirective($source, $variable, $codeMapping);
         }
 
         // Gérer les formats de date
@@ -79,7 +80,7 @@ class PayrollExportService
         return Arr::get($model, implode('.', $parts));
     }
 
-    private function resolveDirective(string $directive, PayrollVariable $variable): mixed
+    private function resolveDirective(string $directive, PayrollVariable $variable, array $codeMapping = []): mixed
     {
         return match ($directive) {
             '@quantity' => in_array($variable->type, [
@@ -99,6 +100,8 @@ class PayrollExportService
                 PayrollVariableType::SundayHour,
                 PayrollVariableType::Absence,
             ]) ? number_format($variable->quantity, 2, ',', '') : '0,00',
+
+            '@mapped_code' => $codeMapping[$variable->type->value] ?? $variable->code,
 
             '@rate', '@base' => '', // Placeholder pour une logique future
 
