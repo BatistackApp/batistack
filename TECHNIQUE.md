@@ -21,6 +21,11 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
     - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé, **en prenant en compte les majorations pour les heures supplémentaires, de nuit et du dimanche**.
     - **Géocodage** : Une automatisation (probablement un observer sur le modèle `Chantier`) convertit l'adresse d'un chantier en coordonnées GPS lors de sa création ou modification.
     - **Coûts de Location** : Le modèle `Chantiers` inclut `total_rental_cost`, mis à jour automatiquement par l'observer `app/Observers/Locations/RentalContractObserver.php` lors des modifications des contrats de location liés.
+    - **Suivi Budgétaire et Rentabilité** :
+        - Le modèle `Chantiers` inclut des champs pour les coûts réels (`total_labor_cost`, `total_material_cost`, `total_rental_cost`, `total_purchase_cost`) et budgétés (`budgeted_revenue`, `budgeted_labor_cost`, etc.).
+        - Des accesseurs (`getTotalRealCostAttribute`, `getRealMarginAttribute`, etc.) sont disponibles pour calculer en temps réel la marge et l'écart par rapport au budget.
+        - La commande `app/Console/Commands/Chantiers/GenerateProfitabilityReportCommand.php` génère des rapports de rentabilité en PDF et CSV pour un ou plusieurs chantiers.
+        - **Historisation** : Le modèle `app/Models/Chantiers/ChantierReport.php` stocke une référence à chaque rapport généré, assurant la traçabilité.
 
 ---
 
@@ -77,7 +82,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Centralisation des écritures comptables, génération des journaux, exports légaux (FEC) et rapports comptables.
 - **Implémentation Technique** :
-    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `SalesDocument`, une `PurchaseDocument`, une `BankTransaction`, un `RentalContract`). Il inclut un `tier_id` pour l'association directe avec un `Tiers`.
+    - **Modèle Central** : `app/Models/Comptabilite/ComptaEntry.php` est le modèle qui stocke chaque ligne d'écriture comptable. Il utilise une relation polymorphique (`sourceable`) pour lier une écriture à sa source (ex: une `Expense`, une `SalesDocument`, une `PurchaseDocument`, une `BankTransaction`, un `RentalContract`, une `Intervention`). Il inclut un `tier_id` pour l'association directe avec un `Tiers`.
     - **Services de Comptabilisation** : La logique est déportée dans des services spécialisés :
         - `app/Services/Comptabilite/ExpenseComptaService.php` : Gère la comptabilisation des notes de frais.
         - `app/Services/Comptabilite/UlysComptaService.php` : Gère la comptabilisation des dépenses de flotte Ulys.
@@ -85,6 +90,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - `app/Services/Comptabilite/PurchaseDocumentComptaService.php` : Gère la comptabilisation des documents d'achat.
         - `app/Services/Comptabilite/BankTransactionComptaService.php` : Gère la comptabilisation des transactions bancaires.
         - `app/Services/Comptabilite/RentalContractComptaService.php` : Gère la comptabilisation des contrats de location.
+        - `app/Services/Comptabilite/InterventionComptaService.php` : Gère la comptabilisation des coûts des interventions.
     - **Export FEC** :
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
@@ -164,6 +170,22 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 ---
 
+### Module : Interventions
+
+- **Description Fonctionnelle** : Gestion et suivi des interventions de maintenance sur les sites ou chantiers.
+- **Implémentation Technique** :
+    - **Structure** :
+        - **Modèles** : `app/Models/Interventions/Intervention.php` et `app/Models/Interventions/InterventionProduct.php` (pivot).
+        - **Statuts** : `app/Enums/Interventions/InterventionStatus.php`.
+    - **Automatisation (Calcul des Coûts)** :
+        - **Main-d'œuvre** : L'observer `app/Observers/RH/TimesheetObserver.php` recalcule le `total_labor_cost` de l'intervention à chaque modification d'un pointage lié.
+        - **Matériaux** : L'observer `app/Observers/Interventions/InterventionProductObserver.php` recalcule le `total_material_cost` et met à jour les stocks à chaque modification des pièces utilisées.
+    - **Automatisation (Notifications)** : L'observer `app/Observers/Interventions/InterventionObserver.php` envoie des notifications (`app/Notifications/Interventions/InterventionNotification.php`) lors de la création ou du changement de statut.
+    - **Automatisation (Comptabilisation)** : L'observer `app/Observers/Interventions/InterventionObserver.php` déclenche le service `app/Services/Comptabilite/InterventionComptaService.php` lorsque le statut passe à `Completed`.
+    - **Automatisation (Facturation)** : L'observer `app/Observers/Interventions/InterventionObserver.php` déclenche la méthode `generateSalesDocument()` du modèle `Intervention` lorsque le statut passe à `Completed` et que l'intervention est facturable.
+
+---
+
 ### Module : 3D Vision
 
 - **Description Fonctionnelle** : Visualisation 3D des projets.
@@ -186,6 +208,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Compta/Base | app/Models/Comptabilite/ComptaEntry.php | Modèle d'écriture comptable, inclut `tier_id` et relation `tier`. |
 | Compta/Reporting | app/Services/Comptabilite/ComptaReportingService.php | Service de récupération des données pour les journaux et le Grand Livre. |
 | Compta/Rapports | app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php | Commande Artisan pour générer les rapports comptables (journaux, grand livre) en CSV. Planifiée via `routes/console.php`. |
+| Chantiers/Reporting | app/Console/Commands/Chantiers/GenerateProfitabilityReportCommand.php | Commande Artisan pour générer les rapports de rentabilité (PDF, CSV) par chantier. |
 | Facturation/Vente | app/Models/Facturation/SalesDocument.php | Modèle principal des documents de vente. |
 | Facturation/Vente | app/Enums/Facturation/SalesDocumentStatus.php | Enum des statuts des documents de vente. |
 | Facturation/Vente | app/Services/Comptabilite/SalesDocumentComptaService.php | Service de comptabilisation des documents de vente. |
@@ -246,3 +269,11 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
 | Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |
 | GPAO/OF | database/migrations/2025_12_12_270000_add_total_material_cost_to_production_orders_table.php | Migration pour ajouter le coût des matériaux aux ordres de fabrication. |
+| Interventions/Base | app/Models/Interventions/Intervention.php | Modèle principal des interventions. |
+| Interventions/Base | app/Models/Interventions/InterventionProduct.php | Modèle pivot pour les produits utilisés dans une intervention. |
+| Interventions/Automation | app/Observers/Interventions/InterventionObserver.php | Déclenche les notifications et la comptabilisation. |
+| Interventions/Automation | app/Observers/Interventions/InterventionProductObserver.php | Recalcule le coût des matériaux et met à jour les stocks. |
+| Interventions/Compta | app/Services/Comptabilite/InterventionComptaService.php | Service de comptabilisation des coûts des interventions. |
+| Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |
+| Chantiers/Reporting | app/Models/Chantiers/ChantierReport.php | Modèle pour historiser les rapports de rentabilité. |
+| Chantiers/Reporting | database/migrations/2025_12_12_330000_create_chantier_reports_table.php | Migration pour la table d'historisation des rapports. |

@@ -84,6 +84,14 @@ Schedule::command('compta:generate-reports', ['--month' => now()->subMonth()->mo
     ->sendOutputTo(storage_path('logs/schedule/compta-generate-reports.log'))
     ->description("Génère le rapport comptable pour toutes les companie.");
 
+// Dans routes/console.php
+Schedule::command('compta:generate-vat-report', ['--month' => now()->subMonth()->month, '--year' => now()->subMonth()->year])
+    ->monthlyOn(1, '02:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/compta-generate-reports.log'))
+    ->description("Generates a VAT report (PDF and CSV) for a given period.");
+
 Schedule::job(new \App\Jobs\Comptabilite\PostRecurringEntriesJob())
     ->dailyAt('04:00')
     ->onOneServer()

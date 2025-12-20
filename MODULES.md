@@ -5,7 +5,7 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | Module | État d'Avancement | Priorité | Description Fonctionnelle |
 |---|---|---|---|
 | **Tiers (CRM)** | Stable | Basse | Gestion des clients, fournisseurs et sous-traitants. |
-| **Chantiers** | Stable | Basse | Suivi des projets, incluant la gestion des coûts de main-d'œuvre mis à jour automatiquement. |
+| **Chantiers** | Stable | Basse | Suivi des projets, incluant la gestion des coûts (main-d'œuvre, location, achats), le suivi budgétaire et la génération de rapports de rentabilité (PDF/CSV). |
 | **Articles & Stock** | Stable | Basse | Gestion du catalogue d'articles, des ouvrages (recettes) et du stock multi-dépôts. |
 | **Commerce / Facturation** | Stable | Basse | Création de devis, factures, acomptes et suivi des paiements. **Inclut désormais la gestion des factures fournisseurs.** |
 | **Banque** | Stable | Basse | Gestion des comptes, synchronisation des transactions et rapprochement bancaire automatisé. |
@@ -17,5 +17,5 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **Flottes** | Avancé | **Haute** | Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. |
 | **GPAO** | Avancé | Moyenne | Gestion des Ordres de Fabrication (OF), **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre et des matériaux, et les notifications d'assignation et de retard. La gestion de la nomenclature (recette) est déjà faite. |
 | **Locations** | En cours | Moyenne | Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique. |
+| **Interventions** | Avancé | Basse | Gestion et suivi des interventions de maintenance sur les sites ou chantiers, avec calcul des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures avec marge configurable. |
 | **3D Vision** | En cours | Moyenne | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
-| **Intervention** | À faire | Basse | Gestion et suivi des interventions de maintenance sur les sites ou chantiers. |
