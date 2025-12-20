@@ -12,6 +12,13 @@ class Company extends Model
     use HasFactory;
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'default_intervention_margin' => 'decimal:2',
+        ];
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

@@ -19,7 +19,6 @@ class ProductionOrderObserver
      */
     public function created(ProductionOrder $productionOrder): void
     {
-        // Envoyer une notification lors de la création d'un OF
         $this->sendNotification($productionOrder, 'created');
     }
 
@@ -28,6 +27,20 @@ class ProductionOrderObserver
      */
     public function updated(ProductionOrder $productionOrder): void
     {
+        // Si les coûts ont changé
+        if ($productionOrder->isDirty('total_labor_cost', 'total_material_cost')) {
+            $oldLaborCost = $productionOrder->getOriginal('total_labor_cost');
+            $newLaborCost = $productionOrder->total_labor_cost;
+            $oldMaterialCost = $productionOrder->getOriginal('total_material_cost');
+            $newMaterialCost = $productionOrder->total_material_cost;
+
+            if ($productionOrder->salesDocumentLine && $productionOrder->salesDocumentLine->salesDocument->chantiers_id) {
+                $chantier = $productionOrder->salesDocumentLine->salesDocument->chantiers;
+                $chantier->increment('total_labor_cost', $newLaborCost - $oldLaborCost);
+                $chantier->increment('total_material_cost', $newMaterialCost - $oldMaterialCost);
+            }
+        }
+
         // Si le statut a changé, envoyer une notification de changement de statut
         if ($productionOrder->isDirty('status')) {
             $this->sendNotification($productionOrder, 'status_changed');
@@ -69,14 +82,16 @@ class ProductionOrderObserver
                     $productToProduce = $productionOrder->product;
                     $quantityProduced = $productionOrder->quantity;
                     $warehouseId = $productionOrder->warehouse_id;
+                    $totalMaterialCost = 0;
 
                     if (!$warehouseId) {
                         throw new Exception("Aucun dépôt n'est spécifié pour l'Ordre de Fabrication {$productionOrder->reference}.");
                     }
 
-                    // 1. Décrémenter les stocks des composants
+                    // 1. Décrémenter les stocks des composants et calculer leur coût
                     foreach ($productToProduce->children as $component) {
                         $requiredQuantity = $component->pivot->quantity * $quantityProduced;
+                        $totalMaterialCost += $requiredQuantity * ($component->buying_price ?? 0);
 
                         // Trouver le stock du composant dans le dépôt spécifié
                         $stock = InventoryStock::where('product_id', $component->id)
@@ -113,9 +128,12 @@ class ProductionOrderObserver
 
                     $finishedProductStock->increment('quantity_on_hand', $quantityProduced);
                     Log::info("OF {$productionOrder->reference}: Incrémenté {$quantityProduced} de {$productToProduce->name}. Stock total: {$finishedProductStock->quantity_on_hand}.");
+
+                    // 3. Mettre à jour le coût des matériaux sur l'OF
+                    $productionOrder->update(['total_material_cost' => $totalMaterialCost]);
                 });
 
-                Log::info("Ordre de Fabrication {$productionOrder->reference} traité avec succès. Stocks mis à jour.");
+                Log::info("Ordre de Fabrication {$productionOrder->reference} traité avec succès. Stocks et coût des matériaux mis à jour.");
 
             } catch (Exception $e) {
                 Log::error("Erreur lors du traitement de l'OF {$productionOrder->reference}: " . $e->getMessage());
@@ -131,8 +149,12 @@ class ProductionOrderObserver
     public function deleted(ProductionOrder $productionOrder): void
     {
         $this->sendNotification($productionOrder, 'deleted');
-        // Optionnel : Gérer l'annulation d'un OF terminé (remettre les stocks ?)
-        // C'est une logique complexe qui dépend des règles métier (ex: annulation possible si OF récent, sinon OD de correction)
+
+        if ($productionOrder->salesDocumentLine && $productionOrder->salesDocumentLine->salesDocument->chantiers_id) {
+            $chantier = $productionOrder->salesDocumentLine->salesDocument->chantiers;
+            $chantier->decrement('total_labor_cost', $productionOrder->total_labor_cost);
+            $chantier->decrement('total_material_cost', $productionOrder->total_material_cost);
+        }
     }
 
     /**

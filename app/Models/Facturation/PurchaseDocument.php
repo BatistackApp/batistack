@@ -3,6 +3,7 @@
 namespace App\Models\Facturation;
 
 use App\Enums\Facturation\PurchaseDocumentStatus;
+use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
 use App\Models\Tiers\Tiers;
 use App\Observers\Facturation\PurchaseDocumentObserver;
@@ -28,6 +29,11 @@ class PurchaseDocument extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function chantiers(): BelongsTo
+    {
+        return $this->belongsTo(Chantiers::class);
     }
 
     protected function casts(): array
