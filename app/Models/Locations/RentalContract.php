@@ -3,6 +3,7 @@
 namespace App\Models\Locations;
 
 use App\Enums\Locations\RentalContractStatus;
+use App\Enums\Locations\RentalPeriodicity;
 use App\Models\Chantiers\Chantiers;
 use App\Models\Core\Company;
 use App\Models\Tiers\Tiers;
@@ -26,12 +27,14 @@ class RentalContract extends Model
     {
         return [
             'status' => RentalContractStatus::class,
+            'periodicity' => RentalPeriodicity::class,
             'is_posted_to_compta' => 'boolean',
             'start_date' => 'date',
             'end_date' => 'date',
             'total_ht' => 'decimal:2',
             'total_vat' => 'decimal:2',
             'total_ttc' => 'decimal:2',
+            'deposit_amount' => 'decimal:2',
         ];
     }
 

@@ -2,10 +2,8 @@
 
 namespace App\Services\Comptabilite;
 
-use App\Enums\Facturation\SalesDocumentLineType;
-use App\Enums\Facturation\SalesDocumentStatus;
-use App\Enums\Facturation\SalesDocumentType;
-use App\Models\Facturation\SalesDocument;
+use App\Enums\Facturation\PurchaseDocumentStatus;
+use App\Models\Facturation\PurchaseDocument;
 use App\Models\Locations\RentalContract;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -13,7 +11,7 @@ use Exception;
 class RentalContractComptaService
 {
     /**
-     * Crée une facture (SalesDocument) à partir d'un contrat de location.
+     * Crée une facture fournisseur (PurchaseDocument) à partir d'un contrat de location.
      *
      * @param RentalContract $contract
      * @return void
@@ -22,46 +20,47 @@ class RentalContractComptaService
     public function generateInvoiceFromContract(RentalContract $contract): void
     {
         // Vérifier si une facture a déjà été générée pour ce contrat
-        if (SalesDocument::where('sourceable_type', RentalContract::class)
+        if (PurchaseDocument::where('sourceable_type', RentalContract::class)
             ->where('sourceable_id', $contract->id)
             ->exists()) {
-            Log::warning("Une facture a déjà été générée pour le contrat de location {$contract->reference}.");
+            Log::warning("Une facture fournisseur a déjà été générée pour le contrat de location #{$contract->id}.");
             return;
         }
 
-        // Hypothèse d'un taux de TVA standard de 20%
-        $vatRate = 0.20;
-        $totalTTC = $contract->total_ttc;
-        $totalHT = $totalTTC / (1 + $vatRate);
-        $totalVAT = $totalTTC - $totalHT;
-
-        // Création de la facture
-        $invoice = SalesDocument::create([
+        // Création de la facture fournisseur
+        $invoice = PurchaseDocument::create([
             'company_id' => $contract->company_id,
             'tiers_id' => $contract->tiers_id,
             'chantiers_id' => $contract->chantiers_id,
-            'type' => SalesDocumentType::Invoice,
-            'status' => SalesDocumentStatus::Draft, // La facture est créée en brouillon
+            'status' => PurchaseDocumentStatus::Draft, // La facture est créée en brouillon pour validation
             'date' => now(),
-            'due_date' => now()->addDays(30),
-            'total_ht' => $totalHT,
-            'total_vat' => $totalVAT,
-            'total_ttc' => $totalTTC,
-            'notes' => "Facture générée à partir du contrat de location {$contract->reference}.",
+            'due_date' => now()->addDays(30), // Par défaut, à ajuster selon les conditions fournisseur
+            'total_ht' => $contract->total_ht,
+            'total_vat' => $contract->total_vat,
+            'total_ttc' => $contract->total_ttc,
+            'notes' => "Facture générée automatiquement à partir du contrat de location #{$contract->id} (Période : {$contract->start_date->format('d/m/Y')} - {$contract->end_date->format('d/m/Y')})",
             'sourceable_type' => RentalContract::class,
             'sourceable_id' => $contract->id,
         ]);
 
-        // Création de la ligne de facture
-        $invoice->lines()->create([
-            'product_name' => "Location de matériel: {$contract->fleet->name}",
-            'description' => "Période du {$contract->start_date->format('d/m/Y')} au {$contract->end_date->format('d/m/Y')}",
-            'quantity' => 1,
-            'unit_price_ht' => $totalHT,
-            'vat_rate' => $vatRate * 100,
-            'type' => SalesDocumentLineType::Service,
-        ]);
+        // Création des lignes de facture à partir des lignes du contrat
+        foreach ($contract->lines as $line) {
+            $invoice->lines()->create([
+                'description' => $line->product ? $line->product->name : "Location diverse",
+                'quantity' => $line->quantity,
+                'unit_price' => $line->unit_price,
+                'vat_rate' => $line->vat_rate,
+                'total_ht' => $line->total_ht,
+                'total_vat' => $line->total_vat,
+                'total_ttc' => $line->total_ttc,
+                // Si PurchaseDocumentLine a un champ product_id ou account_id, le mapper ici
+                // 'product_id' => $line->product_id,
+            ]);
+        }
 
-        Log::info("Facture {$invoice->reference} créée avec succès à partir du contrat de location {$contract->reference}.");
+        // Marquer le contrat comme comptabilisé
+        $contract->updateQuietly(['is_posted_to_compta' => true]);
+
+        Log::info("Facture fournisseur #{$invoice->id} créée avec succès à partir du contrat de location #{$contract->id}.");
     }
 }
