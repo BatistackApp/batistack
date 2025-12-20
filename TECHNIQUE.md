@@ -148,9 +148,9 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 ### Module : GPAO
 
-- **Description Fonctionnelle** : Gestion des Ordres de Fabrication (OF) et de la nomenclature (recettes).
+- **Description Fonctionnelle** : Gestion des Ordres de Fabrication (OF), de la nomenclature (recettes) et des besoins en matériaux.
 - **Implémentation Technique** :
-    - **Nomenclature** : La gestion des "recettes" (assemblages de produits) est en place.
+    - **Nomenclature** : La gestion des "recettes" est gérée par le modèle `app/Models/Articles/ProductAssembly.php`.
     - **Ordres de Fabrication** :
         - **Modèle Principal** : `app/Models/GPAO/ProductionOrder.php` pour gérer les ordres de fabrication, **incluant les champs de planification (`assigned_to`, `planned_start_date`, `planned_end_date`) et de suivi (`actual_start_date`, `actual_end_date`)**.
         - **Statuts** : `app/Enums/GPAO/ProductionOrderStatus.php` pour suivre l'état de l'OF (Brouillon, Planifié, En cours, Terminé, Annulé).
@@ -160,6 +160,9 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - **Automatisation (Alertes de retard)** : La commande `app/Console/Commands/GPAO/CheckProductionOrderDelaysCommand.php` vérifie quotidiennement les OF en retard et envoie des alertes. Cette commande est planifiée via `routes/console.php`.
         - **Calcul du Coût de Main-d'Œuvre** : L'observer `app/Observers/RH/TimesheetObserver.php` recalcule le `total_labor_cost` de l'OF à chaque modification d'un pointage lié.
         - **Calcul du Coût des Matériaux** : L'observer `app/Observers/GPAO/ProductionOrderObserver.php` calcule le `total_material_cost` de l'OF lorsque celui-ci est terminé.
+    - **Calcul des Besoins et Suggestions d'Achat (MRP Simplifié)** :
+        - Le service `app/Services/GPAO/MaterialRequirementService.php` calcule les déficits en matériaux en comparant les besoins des OF (`Planned` et `InProgress`) avec le stock disponible.
+        - La commande `app/Console/Commands/GPAO/GeneratePurchaseSuggestionsCommand.php` utilise ce service pour générer automatiquement des brouillons de commandes fournisseurs (`PurchaseDocument`) pour les produits manquants, en se basant sur le fournisseur principal (`main_supplier_id`) du produit.
 
 ---
 
@@ -271,6 +274,8 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | GPAO/OF | database/migrations/2024_01_01_000002_add_production_order_id_to_timesheets_table.php | Migration pour lier les pointages aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000003_add_total_labor_cost_to_production_orders_table.php | Migration pour ajouter le coût de la main-d'œuvre aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000004_add_sales_document_line_id_to_production_orders_table.php | Migration pour lier les ordres de fabrication aux lignes de commande client. |
+| GPAO/MRP | app/Services/GPAO/MaterialRequirementService.php | Service de calcul des besoins en matériaux (MRP simplifié). |
+| GPAO/MRP | app/Console/Commands/GPAO/GeneratePurchaseSuggestionsCommand.php | Commande de génération des suggestions d'achats. |
 | Locations/Base | app/Models/Locations/RentalContract.php | Modèle principal des contrats de location. |
 | Locations/Base | app/Models/Locations/RentalContractLine.php | Modèle pour les lignes de contrat de location. |
 | Locations/Automation | app/Observers/Locations/RentalContractLineObserver.php | Recalcule les totaux du contrat à chaque modification d'une ligne. |
