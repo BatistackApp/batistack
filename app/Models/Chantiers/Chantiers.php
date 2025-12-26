@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property string $total_fleet_cost
+ */
 #[ObservedBy([ChantiersObserver::class])]
 class Chantiers extends Model
 {
@@ -38,16 +41,18 @@ class Chantiers extends Model
             'end_date_real' => 'date',
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
-            'total_labor_cost' => 'decimal:2',
-            'total_rental_cost' => 'decimal:2',
-            'total_sales_revenue' => 'decimal:2',
-            'total_purchase_cost' => 'decimal:2',
-            'total_material_cost' => 'decimal:2',
-            'total_fleet_cost' => 'decimal:2',
-            'budgeted_revenue' => 'decimal:2',
-            'budgeted_labor_cost' => 'decimal:2',
-            'budgeted_material_cost' => 'decimal:2',
-            'budgeted_rental_cost' => 'decimal:2',
+            'total_labor_cost' => 'decimal:15,2',
+            'total_rental_cost' => 'decimal:15,2',
+            'total_sales_revenue' => 'decimal:15,2',
+            'total_purchase_cost' => 'decimal:15,2',
+            'total_material_cost' => 'decimal:15,2',
+            'total_fleet_cost' => 'decimal:12,2',
+            'budgeted_revenue' => 'decimal:15,2',
+            'budgeted_labor_cost' => 'decimal:15,2',
+            'budgeted_material_cost' => 'decimal:15,2',
+            'budgeted_rental_cost' => 'decimal:15,2',
+            'budgeted_purchase_cost' => 'decimal:15,2',
+            'budgeted_fleet_cost' => 'decimal:12,2',
             'status' => ChantiersStatus::class,
             'is_overdue' => 'boolean'
         ];
@@ -55,14 +60,24 @@ class Chantiers extends Model
 
     // --- ACCESSEURS POUR LE SUIVI DE RENTABILITÉ ---
 
+    /**
+     * Calculate total real cost including labor, material, rental, purchase and fleet.
+     *
+     * @return float
+     */
     public function getTotalRealCostAttribute(): float
     {
         return $this->total_labor_cost + $this->total_material_cost + $this->total_rental_cost + $this->total_purchase_cost + $this->total_fleet_cost;
     }
 
+    /**
+     * Calculate total budgeted cost including labor, material, rental, purchase and fleet.
+     *
+     * @return float
+     */
     public function getTotalBudgetedCostAttribute(): float
     {
-        return $this->budgeted_labor_cost + $this->budgeted_material_cost + $this->budgeted_rental_cost;
+        return $this->budgeted_labor_cost + $this->budgeted_material_cost + $this->budgeted_rental_cost + $this->budgeted_purchase_cost + $this->budgeted_fleet_cost;
     }
 
     public function getRealMarginAttribute(): float
