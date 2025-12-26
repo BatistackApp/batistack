@@ -13,11 +13,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('maintenances', function (Blueprint $table) {
-            $table->string('type')->default(MaintenanceType::Scheduled->value)->after('fleet_id');
-            $table->text('description')->nullable()->after('type');
             $table->string('provider_name')->nullable()->after('cost');
-            $table->unsignedInteger('mileage_at_maintenance')->nullable()->after('date_maintenance');
-            $table->unsignedInteger('next_mileage')->nullable()->after('next_date');
+            $table->unsignedInteger('mileage_at_maintenance')->nullable()->after('maintenance_date');
         });
     }
 

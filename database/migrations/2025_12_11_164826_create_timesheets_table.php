@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->foreignIdFor(Employee::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(Chantiers::class)->nullable()->constrained()->cascadeOnDelete();
 
-            $table->foreignId('fleet_id')->nullable()->constrained('fleets')->nullOnDelete();
+            $table->foreignIdFor(\App\Models\Fleets\Fleet::class)->nullable()->constrained()->nullOnDelete();
             // Pour les véhicules : Kilométrage de fin de journée
             $table->integer('end_mileage')->nullable();
             // Pour les engins : Lecture du compteur d'heures
@@ -35,7 +35,7 @@ return new class extends Migration {
 
             $table->index(['company_id', 'date']);
             $table->index(['employee_id', 'date']);
-            $table->index(['project_id']);
+            $table->index(['chantiers_id']); // Correction: project_id n'existe pas, c'est chantiers_id
         });
     }
 

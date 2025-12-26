@@ -12,8 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('insurances', function (Blueprint $table) {
-            $table->string('contract_number')->nullable()->after('fleet_id');
-            $table->string('insurer_name')->nullable()->after('contract_number');
             $table->boolean('is_active')->default(true)->after('annual_cost');
             $table->timestamp('notified_at')->nullable()->after('is_active');
         });

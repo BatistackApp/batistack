@@ -17,5 +17,5 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **Flottes** | **Terminé** | Moyenne | Gestion complète (Véhicules, Assurances, Maintenances). **Assignation sécurisée avec détection de conflits** et notifications. |
 | **Locations** | **Terminé** | Moyenne | Gestion des contrats fournisseurs. **Support de la périodicité, alertes d'expiration et génération automatique des factures fournisseurs.** |
 | **Interventions** | **Terminé** | Moyenne | Gestion des interventions (Forfait ou Régie). **Déstockage intelligent (Dépôt par défaut), facturation client et comptabilisation analytique des coûts.** |
-| **GPAO** | Avancé | Moyenne | Gestion des Ordres de Fabrication (OF), planification, suivi de statut, mise à jour des stocks. Reste à affiner la gestion des achats suggérés. |
+| **GPAO** | **Terminé** | Moyenne | Gestion des Ordres de Fabrication (OF), planification, suivi de statut, mise à jour des stocks. **Inclut un système de calcul des besoins en matériaux (MRP simplifié) et la génération automatique de suggestions d'achats.** |
 | **3D Vision** | En cours | Basse | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |

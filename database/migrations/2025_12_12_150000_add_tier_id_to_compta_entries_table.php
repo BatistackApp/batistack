@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('compta_entries', function (Blueprint $table) {
-            $table->foreignId('tier_id')->nullable()->after('account_id')->constrained('tiers')->nullOnDelete();
+            $table->foreignId('tier_id')->nullable()->after('compta_account_id')->constrained('tiers')->nullOnDelete();
         });
     }
 

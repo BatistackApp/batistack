@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('timesheets', function (Blueprint $table) {
-            $table->foreignId('production_order_id')
+            $table->foreignIdFor(\App\Models\GPAO\ProductionOrder::class)
                   ->nullable()
                   ->after('chantiers_id')
                   ->comment('Lien vers un ordre de fabrication')
-                  ->constrained('production_orders')
+                  ->constrained()
                   ->nullOnDelete(); // Si l'OF est supprimé, on ne supprime pas le pointage, on met juste l'ID à null
         });
     }
