@@ -115,8 +115,9 @@ class DashboardService
 
         $totalAssignedDays = $assignments->sum(function ($assignment) use ($startDate, $endDate) {
             // On calcule l'intersection entre la période d'assignation et la fenêtre de 30 jours
-            $assignStart = max($assignment->start_date, $startDate);
-            $assignEnd = min($assignment->end_date ?? $endDate, $endDate);
+            $assignStart = $assignment->start_date->greaterThan($startDate) ? $assignment->start_date : $startDate;
+            $effectiveEndDate = $assignment->end_date ?? $endDate;
+            $assignEnd = $effectiveEndDate->lessThan($endDate) ? $effectiveEndDate : $endDate;
 
             // On calcule la différence en jours
             return $assignStart->diffInDays($assignEnd) + 1; // +1 pour inclure le jour de début
