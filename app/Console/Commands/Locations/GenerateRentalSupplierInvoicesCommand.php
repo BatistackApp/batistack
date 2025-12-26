@@ -63,7 +63,7 @@ class GenerateRentalSupplierInvoicesCommand extends Command
                 // 2. Créer les lignes de facture basées sur les lignes du contrat
                 foreach ($contract->lines as $line) {
                     $purchaseDoc->lines()->create([
-                        'description' => $line->description . " (Période du " . $contract->next_billing_date->sub($this->getInterval($contract->periodicity))->format('d/m/Y') . " au " . $contract->next_billing_date->format('d/m/Y') . ")",
+                        'description' => $line->description . " (Période du " . $contract->next_billing_date->copy()->sub($this->getInterval($contract->periodicity))->format('d/m/Y') . " au " . $contract->next_billing_date->format('d/m/Y') . ")",
                         'quantity' => $line->quantity,
                         'unit_price' => $line->unit_price,
                         'vat_rate' => $line->vat_rate,
