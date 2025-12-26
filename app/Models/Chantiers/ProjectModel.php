@@ -32,7 +32,7 @@ class ProjectModel extends Model implements HasMedia
 
     public function chantier(): BelongsTo
     {
-        return $this->belongsTo(Chantiers::class);
+        return $this->belongsTo(Chantiers::class, 'chantiers_id');
     }
 
     public function registerMediaCollections(): void
