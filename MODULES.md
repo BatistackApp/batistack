@@ -18,4 +18,5 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 | **Locations** | **Terminé** | Moyenne | Gestion des contrats fournisseurs. **Support de la périodicité, alertes d'expiration et génération automatique des factures fournisseurs.** |
 | **Interventions** | **Terminé** | Moyenne | Gestion des interventions (Forfait ou Régie). **Déstockage intelligent (Dépôt par défaut), facturation client avec marge configurable et suivi de rentabilité, comptabilisation analytique des coûts.** |
 | **GPAO** | **Terminé** | Moyenne | Gestion des Ordres de Fabrication (OF), planification, suivi de statut, mise à jour des stocks. **Inclut un système de calcul des besoins en matériaux (MRP simplifié) et la génération automatique de suggestions d'achats.** |
-| **3D Vision** | En cours | Basse | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
+| **Pilotage** | **Terminé** | Haute | Service de calcul des KPI (Rentabilité chantiers, Alertes financières, Taux d'utilisation flotte) pour les tableaux de bord. |
+| **3D Vision** | **En cours** | Basse | Structure Backend prête pour la gestion des maquettes 3D. Intégration d'un viewer BIM/IFC à faire. |

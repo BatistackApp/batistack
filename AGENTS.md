@@ -22,7 +22,7 @@ A. MODULES TERMINÉS / STABLES (Production)
 
 | Module | Description Fonctionnelle Clé | Automation / Références Code Clés |
 | Tiers (CRM) | Clients, Fournisseurs, Sous-traitants. | Formatage auto. |
-| Chantiers | Gestion Projets, Coûts (Main d'œuvre + Frais). | Géocodage auto. Coût main d'œuvre mis à jour par TimesheetObserver.php. |
+| Chantiers | Gestion Projets, Coûts (Main d'œuvre + Frais). **Imputation analytique des coûts de flotte.** | Géocodage auto. Coût main d'œuvre mis à jour par TimesheetObserver.php. |
 | Articles & Stock | Catalogue, Ouvrages (Recettes), Multi-dépôts. | Alerte stock bas, Mouvements de stock. |
 | Commerce / Facturation | Devis, Factures, Acomptes, Suivi paiements. | Génération PDF (Browsershot), Notifs retards paiement. |
 | Banque | Comptes, Transactions, Rapprochement. | Synchro BridgeAPI, Rapprochement auto. des transactions, MAJ auto. du solde. |
@@ -31,16 +31,17 @@ A. MODULES TERMINÉS / STABLES (Production)
 | GED | Documents, Métadonnées. | Alerte expiration (Assurances). |
 | Comptabilité | Comptabilisation auto. (Ventes, Achats, NDF, Banque, Locations, Interventions). Génération du FEC avec **numérotation séquentielle stricte (Journal/Date/ID)**. Reporting complet (Grand Livre consolidé, Journaux) en CSV. | |
 | Paie | Calcul des fiches de paie. **Export CSV configurable par Compagnie (Silae, Sage, Generic) avec support TR et Transport.** | |
-| Flottes | Gestion complète (Véhicules, Assurances, Maintenances). **Assignation sécurisée avec détection de conflits** et notifications. | |
+| Flottes | Gestion complète (Véhicules, Assurances, Maintenances). **Assignation sécurisée avec détection de conflits** et notifications. **Imputation analytique des coûts aux chantiers.** | |
 | GPAO | Gestion des Ordres de Fabrication (OF), planification, suivi de statut, mise à jour des stocks. **Inclut un système de calcul des besoins en matériaux (MRP simplifié) et la génération automatique de suggestions d'achats.** | |
 | Interventions | Gestion des interventions (Forfait ou Régie). **Déstockage intelligent (Dépôt par défaut), facturation client avec marge configurable et suivi de rentabilité, comptabilisation analytique des coûts.** | |
 | Locations | Gestion des contrats fournisseurs. **Support de la périodicité, alertes d'expiration et génération automatique des factures fournisseurs.** | |
+| Pilotage | Service de calcul des KPI (Rentabilité chantiers, Alertes financières, Taux d'utilisation flotte). | `app/Services/Reporting/DashboardService.php` |
 
 B. MODULES EN COURS (Focus Actuel)
 
 | Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
 |---|---|---|
-| **3D Vision** | En cours | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
+| **3D Vision** | Structure Backend prête | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets. |
 
 C. MODULES À FAIRE (Priorités Futures)
 
@@ -102,6 +103,7 @@ C. MODULES À FAIRE (Priorités Futures)
 | Flottes/Assignation | app/Notifications/Fleets/FleetAssignmentReminderNotification.php | Notification de rappel de fin d'assignation de flotte. |
 | Flottes/Assignation | app/Console/Commands/Fleets/CheckFleetAssignmentRemindersCommand.php | Commande de vérification et d'envoi des rappels de fin d'assignation de flotte. Planifiée via `routes/console.php`. |
 | Flottes/Structure | database/migrations/2025_12_11...create_maintenances_table.php | Stocke les informations de suivi et coût des entretiens. |
+| Flottes/Imputation | app/Jobs/Fleets/AllocateFleetCostsJob.php | Job d'imputation des coûts journaliers des véhicules aux chantiers. |
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
 | Core/Scheduling | routes/console.php | Fichier de planification des commandes Artisan (Laravel 12+). |
@@ -130,6 +132,9 @@ C. MODULES À FAIRE (Priorités Futures)
 | Interventions/Compta | app/Services/Comptabilite/InterventionComptaService.php | Service de comptabilisation des coûts des interventions. |
 | Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |
 | Interventions/Structure | database/migrations/2025_12_26_183000_add_margin_fields_to_interventions_table.php | Ajout des champs de marge et rentabilité. |
+| Pilotage/Reporting | app/Services/Reporting/DashboardService.php | Service de centralisation des calculs de KPI. |
+| 3D/Structure | app/Models/Chantiers/ProjectModel.php | Modèle pour lier les maquettes 3D aux chantiers. |
+| 3D/Structure | database/migrations/2025_12_26_200000_create_project_models_table.php | Migration pour la table des maquettes 3D. |
 
 4. RÔLES UTILISATEURS (AGENTS)
 

@@ -23,7 +23,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
     - **Coûts de Location** : Le modèle `Chantiers` inclut `total_rental_cost`, mis à jour automatiquement par l'observer `app/Observers/Locations/RentalContractObserver.php` lors des modifications des contrats de location liés.
     - **Coûts de Flotte (TCO)** : Le modèle `Chantiers` inclut `total_fleet_cost`. Le Job `app/Jobs/Fleets/AllocateFleetCostsJob.php` (planifié quotidiennement) impute le coût journalier des véhicules (`internal_daily_cost`) aux chantiers en croisant les assignations de flotte et les pointages des employés.
     - **Suivi Budgétaire et Rentabilité** :
-        - Le modèle `Chantiers` inclut des champs pour les coûts réels (`total_labor_cost`, `total_material_cost`, `total_rental_cost`, `total_purchase_cost`, `total_fleet_cost`) et budgétés (`budgeted_revenue`, `budgeted_labor_cost`, etc.).
+        - Le modèle `Chantiers` inclut des champs pour les coûts réels (`total_labor_cost`, `total_material_cost`, `total_rental_cost`, `total_purchase_cost`, `total_fleet_cost`) et budgétés (`budgeted_revenue`, `budgeted_labor_cost`, `budgeted_material_cost`, `budgeted_rental_cost`, `budgeted_purchase_cost`, `budgeted_fleet_cost`).
         - Des accesseurs (`getTotalRealCostAttribute`, `getRealMarginAttribute`, etc.) sont disponibles pour calculer en temps réel la marge et l'écart par rapport au budget.
         - La commande `app/Console/Commands/Chantiers/GenerateProfitabilityReportCommand.php` génère des rapports de rentabilité en PDF et CSV pour un ou plusieurs chantiers.
         - **Historisation** : Le modèle `app/Models/Chantiers/ChantierReport.php` stocke une référence à chaque rapport généré, assurant la traçabilité.
@@ -205,8 +205,20 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Visualisation 3D des projets.
 - **Implémentation Technique** :
-    - **Coordonnées GPS** : La gestion des coordonnées GPS est prête.
-    - **Intégration Viewer BIM/IFC** : L'intégration d'un visualiseur BIM/IFC est à faire.
+    - **Structure** : Le modèle `app/Models/Chantiers/ProjectModel.php` permet de lier des maquettes numériques (IFC, GLB...) à un chantier. Il inclut des champs pour le calage manuel (`model_origin_latitude`, `rotation_z`, etc.) et utilise Spatie Media Library pour le stockage des fichiers.
+    - **Intégration Viewer BIM/IFC** : L'intégration d'un visualiseur est à faire.
+
+---
+
+### Module : Pilotage / Reporting
+
+- **Description Fonctionnelle** : Centralisation des calculs de KPI pour les tableaux de bord.
+- **Implémentation Technique** :
+    - **Service Principal** : `app/Services/Reporting/DashboardService.php`.
+    - **Méthodes Clés** :
+        - `getChantiersRentability()`: Calcule le top/flop des chantiers par marge.
+        - `getFinancialAlerts()`: Agrège les créances en retard et les dettes à venir.
+        - `getFleetUtilization()`: Calcule le taux d'utilisation de la flotte sur 30 jours.
 
 ---
 
@@ -296,3 +308,6 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |
 | Chantiers/Reporting | app/Models/Chantiers/ChantierReport.php | Modèle pour historiser les rapports de rentabilité. |
 | Chantiers/Reporting | database/migrations/2025_12_12_330000_create_chantier_reports_table.php | Migration pour la table d'historisation des rapports. |
+| Pilotage/Reporting | app/Services/Reporting/DashboardService.php | Service de centralisation des calculs de KPI. |
+| 3D/Structure | app/Models/Chantiers/ProjectModel.php | Modèle pour lier les maquettes 3D aux chantiers. |
+| 3D/Structure | database/migrations/2025_12_26_200000_create_project_models_table.php | Migration pour la table des maquettes 3D. |
