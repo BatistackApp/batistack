@@ -91,7 +91,7 @@ class AllocateFleetCostsJob implements ShouldQueue
                 if ($team) {
                     // Récupération des employés via la relation ManyToMany (pivot employee_team)
                     // On s'assure que la relation 'employees' est bien définie dans le modèle Team
-                    $employeeIds = $team->employees()->pluck('employees.id');
+                    $employeeIds = $team->employees()->pluck('id');
 
                     if ($employeeIds->isNotEmpty()) {
                         $timesheet = Timesheet::whereIn('employee_id', $employeeIds)
