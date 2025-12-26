@@ -46,7 +46,11 @@ class GenerateRentalSupplierInvoicesCommand extends Command
         foreach ($contracts as $contract) {
             DB::beginTransaction();
             try {
-                // 1. Créer le document d'achat (Facture Fournisseur)
+                // 1. Incrémenter la séquence
+                $contract->increment('invoice_sequence');
+                $sequence = $contract->invoice_sequence;
+
+                // 2. Créer le document d'achat (Facture Fournisseur)
                 $purchaseDoc = PurchaseDocument::create([
                     'company_id' => $contract->company_id,
                     'tiers_id' => $contract->tiers_id,
@@ -55,12 +59,12 @@ class GenerateRentalSupplierInvoicesCommand extends Command
                     'status' => PurchaseDocumentStatus::Draft, // On laisse en brouillon pour validation
                     'date' => now(),
                     'due_date' => now()->addDays(30), // TODO: Configurable par fournisseur
-                    'reference' => "LOC-{$contract->id}-" . now()->format('Ymd'),
+                    'reference' => "LOC-{$contract->id}-{$sequence}",
                     'sourceable_type' => RentalContract::class,
                     'sourceable_id' => $contract->id,
                 ]);
 
-                // 2. Créer les lignes de facture basées sur les lignes du contrat
+                // 3. Créer les lignes de facture basées sur les lignes du contrat
                 foreach ($contract->lines as $line) {
                     $purchaseDoc->lines()->create([
                         'description' => $line->description . " (Période du " . $contract->next_billing_date->copy()->sub($this->getInterval($contract->periodicity))->format('d/m/Y') . " au " . $contract->next_billing_date->format('d/m/Y') . ")",
@@ -72,13 +76,10 @@ class GenerateRentalSupplierInvoicesCommand extends Command
 
                 $purchaseDoc->recalculate();
 
-                // 3. Mettre à jour la prochaine date de facturation
+                // 4. Mettre à jour la prochaine date de facturation
                 $nextDate = $this->calculateNextBillingDate($contract->next_billing_date, $contract->periodicity);
 
-                // Si la prochaine date dépasse la date de fin du contrat, on met la date de fin ou null
                 if ($contract->end_date && $nextDate > $contract->end_date) {
-                    // Si on veut facturer le prorata, c'est ici que ça se complexifie.
-                    // Pour l'instant, on arrête la facturation récurrente.
                     $contract->update(['next_billing_date' => null]);
                 } else {
                     $contract->update(['next_billing_date' => $nextDate]);
