@@ -5,7 +5,9 @@ namespace App\Models\Facturation;
 use App\Enums\Facturation\SalesDocumentLineType;
 use App\Enums\Facturation\SalesDocumentStatus;
 use App\Enums\Facturation\SalesDocumentType;
+use App\Interfaces\Payable;
 use App\Models\Chantiers\Chantiers;
+use App\Models\Comptabilite\ComptaAccount;
 use App\Models\Tiers\Tiers;
 use App\Observers\Facturation\SalesDocumentObserver;
 use App\Trait\BelongsToCompany;
@@ -17,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([SalesDocumentObserver::class])]
-class SalesDocument extends Model
+class SalesDocument extends Model implements Payable
 {
     use HasFactory, SoftDeletes, BelongsToCompany;
 
@@ -109,5 +111,29 @@ class SalesDocument extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Détermine si un paiement associé à ce document est un encaissement.
+     *
+     * @return bool
+     */
+    public function isIncomingPayment(): bool
+    {
+        // Un paiement sur une facture de vente est toujours un encaissement.
+        return true;
+    }
+
+    /**
+     * Récupère le compte comptable associé à ce type de document.
+     *
+     * @return ComptaAccount
+     */
+    public function getComptaAccount(): ComptaAccount
+    {
+        // Pour une vente, on mouvement le compte client (ex: 411xxx)
+        return ComptaAccount::where('company_id', $this->company_id)
+            ->where('number', 'like', '411%')
+            ->firstOrFail(); // Simplification: on prend le premier compte client trouvé
     }
 }

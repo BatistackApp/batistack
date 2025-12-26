@@ -3,7 +3,9 @@
 namespace App\Models\Facturation;
 
 use App\Enums\Facturation\PurchaseDocumentStatus;
+use App\Interfaces\Payable;
 use App\Models\Chantiers\Chantiers;
+use App\Models\Comptabilite\ComptaAccount;
 use App\Models\Core\Company;
 use App\Models\Tiers\Tiers;
 use App\Observers\Facturation\PurchaseDocumentObserver;
@@ -16,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([PurchaseDocumentObserver::class])]
-class PurchaseDocument extends Model
+class PurchaseDocument extends Model implements Payable
 {
     use SoftDeletes, BelongsToCompany;
 
@@ -81,5 +83,29 @@ class PurchaseDocument extends Model
     {
         // Une facture payée ne doit plus bouger
         return in_array($this->status, [PurchaseDocumentStatus::Paid, PurchaseDocumentStatus::Partial]);
+    }
+
+    /**
+     * Détermine si un paiement associé à ce document est un encaissement.
+     *
+     * @return bool
+     */
+    public function isIncomingPayment(): bool
+    {
+        // Un paiement sur une facture d'achat est toujours un décaissement.
+        return false;
+    }
+
+    /**
+     * Récupère le compte comptable associé à ce type de document.
+     *
+     * @return ComptaAccount
+     */
+    public function getComptaAccount(): ComptaAccount
+    {
+        // Pour un achat, on mouvement le compte fournisseur (ex: 401xxx)
+        return ComptaAccount::where('company_id', $this->company_id)
+            ->where('number', 'like', '401%')
+            ->firstOrFail(); // Simplification: on prend le premier compte fournisseur trouvé
     }
 }
