@@ -13,11 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('fleets', function (Blueprint $table) {
-            $table->string('name')->after('id');
             $table->string('registration_number')->nullable()->unique()->after('name');
-            $table->string('type')->default(FleetType::Car->value)->after('registration_number');
-            $table->string('brand')->nullable()->after('type');
-            $table->string('model')->nullable()->after('type');
             $table->string('vin')->nullable()->unique()->after('model');
             $table->unsignedInteger('mileage')->default(0)->after('vin');
         });
