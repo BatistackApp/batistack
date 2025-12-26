@@ -23,7 +23,8 @@ class AllocateFleetCostsJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public ?\DateTimeInterface $date = null
+        public ?\DateTimeInterface $date = null,
+        public ?int $companyId = null
     ) {
         // Par défaut, on traite la journée d'hier (pour être sûr d'avoir tous les pointages)
         // ou la date passée en paramètre.
@@ -39,7 +40,19 @@ class AllocateFleetCostsJob implements ShouldQueue
         Log::info("Début de l'imputation des coûts flotte pour la date du {$targetDate->format('Y-m-d')}");
 
         // 1. Récupérer tous les véhicules actifs avec un coût journalier défini
-        $fleets = Fleet::where('internal_daily_cost', '>', 0)->get();
+        // Filtrer par company_id si fourni, sinon prendre tout (contexte console global)
+        // Note: En contexte console sans company_id, le scope global BelongsToCompany n'est pas appliqué automatiquement
+        // sauf si on est authentifié. Ici on gère explicitement.
+
+        $query = Fleet::where('internal_daily_cost', '>', 0);
+
+        if ($this->companyId) {
+            $query->where('company_id', $this->companyId);
+        } elseif (auth()->check() && auth()->user()->company_id) {
+             $query->where('company_id', auth()->user()->company_id);
+        }
+
+        $fleets = $query->get();
 
         foreach ($fleets as $fleet) {
             // 2. Trouver l'assignation active pour cette date
@@ -76,18 +89,20 @@ class AllocateFleetCostsJob implements ShouldQueue
                 // Simplification : on cherche un pointage de n'importe quel membre de l'équipe
                 $team = Team::find($assignment->assignable_id);
                 if ($team) {
-                    // On suppose une relation employees() sur Team, ou on passe par une table pivot
-                    // Ici, on va chercher les employés de l'équipe via la table employees (team_id)
-                    $employeeIds = Employee::where('team_id', $team->id)->pluck('id');
+                    // Récupération des employés via la relation ManyToMany (pivot employee_team)
+                    // On s'assure que la relation 'employees' est bien définie dans le modèle Team
+                    $employeeIds = $team->employees()->pluck('id');
 
-                    $timesheet = Timesheet::whereIn('employee_id', $employeeIds)
-                        ->whereDate('date', $targetDate)
-                        ->whereNotNull('chantier_id')
-                        ->orderByDesc('hours')
-                        ->first();
+                    if ($employeeIds->isNotEmpty()) {
+                        $timesheet = Timesheet::whereIn('employee_id', $employeeIds)
+                            ->whereDate('date', $targetDate)
+                            ->whereNotNull('chantier_id')
+                            ->orderByDesc('hours')
+                            ->first();
 
-                    if ($timesheet) {
-                        $chantierId = $timesheet->chantier_id;
+                        if ($timesheet) {
+                            $chantierId = $timesheet->chantier_id;
+                        }
                     }
                 }
             }

@@ -32,7 +32,7 @@ class DashboardService
         // Le calcul de la marge se fait via les accesseurs du modèle, donc on récupère les modèles
         // Attention : pour de gros volumes, il faudrait passer par une requête SQL brute ou une vue matérialisée
 
-        return Chantiers::where('company_id', $this->company->id)
+        return Chantiers::forCompany($this->company)
             ->get() // On charge en mémoire pour utiliser les accesseurs (optimisation possible plus tard)
             ->sortBy([
                 ['real_margin', $order]
@@ -60,20 +60,20 @@ class DashboardService
     public function getFinancialAlerts(): array
     {
         // Factures clients en retard
-        $overdueInvoices = SalesDocument::where('company_id', $this->company->id)
+        $overdueInvoices = SalesDocument::forCompany($this->company)
             ->where('type', SalesDocumentType::Invoice)
             ->whereIn('status', [SalesDocumentStatus::Sent, SalesDocumentStatus::Partial])
             ->where('due_date', '<', now())
             ->sum(DB::raw('total_ttc - amount_paid'));
 
         // Dettes fournisseurs à payer dans les 7 jours
-        $upcomingDebts = PurchaseDocument::where('company_id', $this->company->id)
+        $upcomingDebts = PurchaseDocument::forCompany($this->company)
             ->whereIn('status', [PurchaseDocumentStatus::Received, PurchaseDocumentStatus::Approved, PurchaseDocumentStatus::Partial])
             ->whereBetween('due_date', [now(), now()->addDays(7)])
             ->sum(DB::raw('total_ttc - amount_paid'));
 
         // Dettes fournisseurs en retard
-        $overdueDebts = PurchaseDocument::where('company_id', $this->company->id)
+        $overdueDebts = PurchaseDocument::forCompany($this->company)
             ->whereIn('status', [PurchaseDocumentStatus::Received, PurchaseDocumentStatus::Approved, PurchaseDocumentStatus::Partial])
             ->where('due_date', '<', now())
             ->sum(DB::raw('total_ttc - amount_paid'));
@@ -92,7 +92,7 @@ class DashboardService
      */
     public function getFleetUtilization(): float
     {
-        $totalVehicles = \App\Models\Fleets\Fleet::where('company_id', $this->company->id)
+        $totalVehicles = \App\Models\Fleets\Fleet::forCompany($this->company)
             ->where('is_available', true) // On ne compte que les véhicules censés être dispos
             ->count();
 
@@ -100,24 +100,33 @@ class DashboardService
             return 0.0;
         }
 
-        // Nombre de jours d'assignation sur les 30 derniers jours
         $startDate = now()->subDays(30);
         $endDate = now();
         $totalDaysPossible = $totalVehicles * 30;
 
-        // C'est une approximation. Pour être précis, il faudrait sommer les jours d'intersection
-        // entre chaque assignation et la période [J-30, J].
-        // Simplification : on compte les véhicules assignés aujourd'hui
-
-        $assignedVehiclesCount = FleetAssignment::where('company_id', $this->company->id)
-            ->where('start_date', '<=', now())
-            ->where(function ($query) {
+        // On récupère toutes les assignations qui chevauchent la période de 30 jours
+        $assignments = FleetAssignment::forCompany($this->company)
+            ->where('start_date', '<', $endDate)
+            ->where(function ($query) use ($startDate) {
                 $query->whereNull('end_date')
-                    ->orWhere('end_date', '>=', now());
+                    ->orWhere('end_date', '>', $startDate);
             })
-            ->distinct('fleet_id')
-            ->count('fleet_id');
+            ->get();
 
-        return ($assignedVehiclesCount / $totalVehicles) * 100;
+        $totalAssignedDays = $assignments->sum(function ($assignment) use ($startDate, $endDate) {
+            // On calcule l'intersection entre la période d'assignation et la fenêtre de 30 jours
+            $assignStart = $assignment->start_date->greaterThan($startDate) ? $assignment->start_date : $startDate;
+            $effectiveEndDate = $assignment->end_date ?? $endDate;
+            $assignEnd = $effectiveEndDate->lessThan($endDate) ? $effectiveEndDate : $endDate;
+
+            // On calcule la différence en jours
+            return $assignStart->diffInDays($assignEnd) + 1; // +1 pour inclure le jour de début
+        });
+
+        if ($totalDaysPossible === 0) {
+            return 0.0;
+        }
+
+        return ($totalAssignedDays / $totalDaysPossible) * 100;
     }
 }
