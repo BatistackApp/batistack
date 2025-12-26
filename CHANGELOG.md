@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0](https://github.com/BatistackApp/batistack/releases/tag/v0.2.0) (2025-12-26)
+
+### Features
+
+- **fleets:** Permet l'allocation des coûts flotte par compagnie ([388b13e](https://github.com/BatistackApp/batistack/commit/388b13ea92ea853b13ec758dd360cfc868e83793))
+- **modeles:** Ajouter des relations et affiner la gestion des couts ([3cd4e1d](https://github.com/BatistackApp/batistack/commit/3cd4e1de6f71454f00381b94fc261343d8fa4a82))
+- **BelongsToCompany:** Ajouter le scope local ForCompany ([454ec89](https://github.com/BatistackApp/batistack/commit/454ec891d3ce753d0080f42936953ab4dcc4642e))
+- **db:** Ajout des coûts budgétisés et de l'ID d'entreprise ([1cacc81](https://github.com/BatistackApp/batistack/commit/1cacc81353649584d22545666ac68b87824df1d8))
+- **maquettes-projet:** Ajouter la gestion des maquettes de projet ([1775b39](https://github.com/BatistackApp/batistack/commit/1775b39ca7df738a9373b4a1afea7b8fad67f740))
+- **reporting:** Ajouter le service de tableau de bord ([baca708](https://github.com/BatistackApp/batistack/commit/baca708b42dc42d9e66266e3abf31358e5072f87))
+- **flotte:** Implémenter l'imputation des coûts aux chantiers ([d62e850](https://github.com/BatistackApp/batistack/commit/d62e850bdd0b4e4d5bc5a2948b273ff01367ae86))
+- Ajoute la gestion des marges d'intervention et facturation des contrats ([1b6f1b0](https://github.com/BatistackApp/batistack/commit/1b6f1b013bbd10e49944b8b9b79ab833851cab81))
+- **paie:** Configurer le format d'export de paie par entreprise ([ec18ed7](https://github.com/BatistackApp/batistack/commit/ec18ed7adeda383f17facf416d0ae14422398500))
+- **gpao:** Ajouter le service MRP et la commande de suggestions d'achat ([704f2ee](https://github.com/BatistackApp/batistack/commit/704f2eee519adf878f484dc379fc6e82e0b03084))
+
+### Bug Fixes
+
+- **reporting:** Gérer les durées d'affectation si début > fin ([acb1752](https://github.com/BatistackApp/batistack/commit/acb1752d5ba77cb1e0cfccb0f7c14f8eeb215305))
+- **chantiers:** Préciser la clé étrangère dans ProjectModel ([313bceb](https://github.com/BatistackApp/batistack/commit/313bceb34c5876a389509c8872d6b43d110ccbf1))
+- Correction de la récupération des IDs d'employés ([1a8f4ab](https://github.com/BatistackApp/batistack/commit/1a8f4aba955214ed7f7cb30c22e0ae664d7087c5))
+- **invoices:** Corriger le calcul de la période de facturation (develop) ([b21b479](https://github.com/BatistackApp/batistack/commit/b21b479e211e68c3c02120749e790a8e861ffc79))
+
+### Code Refactoring
+
+- **dashboard:** Utiliser les méthodes Carbon pour les comparaisons de dates ([abaaaa6](https://github.com/BatistackApp/batistack/commit/abaaaa628e41040a492fd681fb73783df1f3ab3c))
+- **chantiers:** Simplifie la définition des casts décimaux ([d62a9a3](https://github.com/BatistackApp/batistack/commit/d62a9a3fb5e771f95d137c3dfcb26230b5e0e976))
+- **reporting:** Refactoriser les requêtes et calculs de flotte ([fa50972](https://github.com/BatistackApp/batistack/commit/fa50972e2b0df3c79159bb53ff5913b78389945c))
+
+### Chores
+
+- update référentiel ([746f28a](https://github.com/BatistackApp/batistack/commit/746f28a585a2eb8530e378fc236af5b083c7732a))
+- Update référentiel ([1df0c92](https://github.com/BatistackApp/batistack/commit/1df0c929cfbd1fb216584c5f529d5d800fc67eff))
+- Mise à jour du référentiel de facturation ([6bc93d7](https://github.com/BatistackApp/batistack/commit/6bc93d73bafc0e354479db55325c0e4a861eb317))
+- Update Référenciel ([622bd87](https://github.com/BatistackApp/batistack/commit/622bd8720b15eb10a819667f6c4752569b1c65f0))
+- update system ([6f2ab92](https://github.com/BatistackApp/batistack/commit/6f2ab927c451baafc35ff24377c4e82aab10b2d5))
+- suppression de migrations obsolètes et renommage de fichiers ([029c09f](https://github.com/BatistackApp/batistack/commit/029c09f1f61ab11d04ccc821aaae2f049fb89403))
 ## [0.1.0](https://github.com/BatistackApp/batistack/releases/tag/v0.1.0) (2025-12-20)
 
 ### Features
