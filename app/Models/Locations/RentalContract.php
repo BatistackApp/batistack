@@ -31,6 +31,7 @@ class RentalContract extends Model
             'is_posted_to_compta' => 'boolean',
             'start_date' => 'date',
             'end_date' => 'date',
+            'next_billing_date' => 'date',
             'total_ht' => 'decimal:2',
             'total_vat' => 'decimal:2',
             'total_ttc' => 'decimal:2',

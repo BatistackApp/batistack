@@ -43,6 +43,8 @@ class Intervention extends Model
             'total_material_cost' => 'decimal:2',
             'fixed_price_amount' => 'decimal:2',
             'costs_posted_to_compta' => 'boolean',
+            'target_margin_rate' => 'decimal:2',
+            'actual_margin' => 'decimal:2',
         ];
     }
 
@@ -117,8 +119,8 @@ class Intervention extends Model
             return null;
         }
 
-        // Récupérer la marge depuis les paramètres de l'entreprise, avec une valeur par défaut
-        $marginPercentage = $this->company->default_intervention_margin ?? 20.00;
+        // Récupérer la marge depuis l'intervention ou les paramètres de l'entreprise
+        $marginPercentage = $this->target_margin_rate ?? $this->company->default_intervention_margin ?? 20.00;
         $marginRate = 1 + ($marginPercentage / 100);
 
         $salesDocument = SalesDocument::create([
@@ -142,6 +144,11 @@ class Intervention extends Model
                 'unit_price' => $this->fixed_price_amount,
                 'vat_rate' => 20.00,
             ]);
+
+            // Calcul de la marge réelle
+            $totalCost = $this->total_labor_cost + $this->total_material_cost;
+            $this->updateQuietly(['actual_margin' => $this->fixed_price_amount - $totalCost]);
+
         } else {
             // Facturation en Régie (Time & Material)
 
@@ -166,6 +173,12 @@ class Intervention extends Model
                     'vat_rate' => 20.00,
                 ]);
             }
+
+            // Recalculer le total de la facture pour déduire la marge réelle
+            $salesDocument->recalculate();
+            $totalBilled = $salesDocument->total_ht;
+            $totalCost = $this->total_labor_cost + $this->total_material_cost;
+            $this->updateQuietly(['actual_margin' => $totalBilled - $totalCost]);
         }
 
         $salesDocument->recalculate();

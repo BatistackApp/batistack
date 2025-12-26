@@ -14,6 +14,8 @@ enum PayrollVariableType: string implements HasLabel
     case Absence = 'absence';         // Absences (à déduire)
     case Bonus = 'bonus';             // Primes (Panier, Zone, Salissure)
     case ExpenseRefund = 'expense';   // Remboursement Note de frais
+    case MealVoucher = 'meal_voucher'; // Titres restaurant
+    case Transport = 'transport';     // Indemnité transport
 
     public function getLabel(): ?string
     {
@@ -26,6 +28,8 @@ enum PayrollVariableType: string implements HasLabel
             self::Absence => 'Absence',
             self::Bonus => 'Prime / Indemnité',
             self::ExpenseRefund => 'Remboursement Frais',
+            self::MealVoucher => 'Titres Restaurant',
+            self::Transport => 'Indemnité Transport',
         };
     }
 }

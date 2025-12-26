@@ -22,23 +22,23 @@ Le projet s'articule autour de plusieurs modules métiers, certains étant déj�
 ### Modules en Cours de Développement
 
 - **Comptabilité** :
-    - **Avancé** : Comptabilisation automatique des NDF, consommations Ulys, **factures de vente, factures fournisseurs et contrats de location**.
-    - **Avancé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers et numérotation séquentielle conforme.
-    - **Avancé** : Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**.
+    - **Terminé** : Comptabilisation automatique des NDF, consommations Ulys, **factures de vente, factures fournisseurs et contrats de location**.
+    - **Terminé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers et **numérotation séquentielle stricte (Journal/Date/ID)**.
+    - **Terminé** : Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**.
 - **Paie** :
-    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**.
-    - **Avancé** : Génération d'exports CSV avec support de différents formats (Silae, Sage, générique), **prêt pour l'intégration des spécifications exactes**.
+    - **Terminé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**.
+    - **Terminé** : Génération d'exports CSV **configurables par Compagnie (Silae, Sage, Generic)** avec support des Titres Restaurant et Transport.
 - **Flottes** :
-    - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
-    - **Avancé** : Gestion des assurances avec alertes d'expiration.
-    - **Avancé** : Gestion des maintenances avec alertes d'échéance.
-    - **Avancé** : Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**.
+    - **Terminé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
+    - **Terminé** : Gestion des assurances avec alertes d'expiration.
+    - **Terminé** : Gestion des maintenances avec alertes d'échéance.
+    - **Terminé** : Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**.
 - **GPAO** :
-    - **Avancé** : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre et des matériaux, et les notifications d'assignation et de retard.
+    - **Terminé** : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre et des matériaux, et les notifications d'assignation et de retard.
 - **Locations** :
-    - **En cours** : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique.
+    - **Terminé** : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique.
 - **Interventions** :
-    - **En cours** : Gestion des interventions, avec suivi des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures.
+    - **Terminé** : Gestion des interventions, avec suivi des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures.
 
 ## 🚀 Stack Technique
 

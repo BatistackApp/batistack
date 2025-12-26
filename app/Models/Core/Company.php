@@ -2,6 +2,7 @@
 
 namespace App\Models\Core;
 
+use App\Enums\Paie\PayrollExportFormat;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ class Company extends Model
     {
         return [
             'default_intervention_margin' => 'decimal:2',
+            'payroll_export_format' => PayrollExportFormat::class,
         ];
     }
 
