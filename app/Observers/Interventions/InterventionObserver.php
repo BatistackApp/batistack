@@ -63,22 +63,27 @@ class InterventionObserver
 
             // Si le statut passe à "Terminé"
             if ($intervention->status === InterventionStatus::Completed) {
-                // Comptabiliser les coûts
-                try {
-                    $comptaService = new InterventionComptaService();
-                    $comptaService->postInterventionCosts($intervention);
-                    Log::info("Coûts pour l'intervention {$intervention->id} comptabilisés avec succès.");
-                } catch (\Exception $e) {
-                    Log::error("Erreur lors de la comptabilisation des coûts pour l'intervention {$intervention->id}: " . $e->getMessage());
-                }
 
-                // Générer la facture si l'intervention est facturable
-                if ($intervention->is_billable) {
+                // 1. Générer la facture (REVENU) si l'intervention est facturable
+                // On le fait AVANT la comptabilisation des coûts pour avoir potentiellement un lien
+                if ($intervention->is_billable && !$intervention->sales_document_id) {
                     try {
                         $intervention->generateSalesDocument();
                         Log::info("Facture générée pour l'intervention {$intervention->id}.");
                     } catch (\Exception $e) {
                         Log::error("Erreur lors de la génération de la facture pour l'intervention {$intervention->id}: " . $e->getMessage());
+                    }
+                }
+
+                // 2. Comptabiliser les coûts (CHARGES ANALYTIQUES)
+                // Uniquement si pas déjà fait
+                if (!$intervention->costs_posted_to_compta) {
+                    try {
+                        $comptaService = new InterventionComptaService();
+                        $comptaService->postInterventionCosts($intervention);
+                        Log::info("Coûts pour l'intervention {$intervention->id} comptabilisés avec succès.");
+                    } catch (\Exception $e) {
+                        Log::error("Erreur lors de la comptabilisation des coûts pour l'intervention {$intervention->id}: " . $e->getMessage());
                     }
                 }
             }
