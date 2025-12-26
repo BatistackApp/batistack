@@ -119,6 +119,10 @@ class DashboardService
             $effectiveEndDate = $assignment->end_date ?? $endDate;
             $assignEnd = $effectiveEndDate->lessThan($endDate) ? $effectiveEndDate : $endDate;
 
+            if ($assignStart->greaterThan($assignEnd)) {
+                return 0;
+            }
+
             // On calcule la différence en jours
             return $assignStart->diffInDays($assignEnd) + 1; // +1 pour inclure le jour de début
         });
