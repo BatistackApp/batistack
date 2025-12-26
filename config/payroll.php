@@ -11,24 +11,6 @@ return [
     | Each format has a specific set of headers and a mapping to retrieve
     | the corresponding data from the application's models.
     |
-    | - 'delimiter': The CSV delimiter (e.g., ';', ',').
-    | - 'headers': An ordered array of column headers for the CSV file.
-    | - 'mapping': An associative array where the key is the header and the
-    |   value is the source of the data.
-    | - 'code_mapping': (Optional) A mapping between internal PayrollVariableType
-    |   values and the external software codes.
-    |
-    | Data Sources Syntax:
-    | - 'model.property.sub_property': Dot notation to access related model data.
-    |   'slip' refers to the PayrollSlip model.
-    |   'variable' refers to the PayrollVariable model.
-    |   'employee' refers to the Employee model associated with the slip.
-    |   Example: 'employee.ssn' would get the social security number.
-    |
-    | - '@directive': A special directive for calculated or conditional values.
-    |   These are resolved by a dedicated method in the PayrollExportService.
-    |   Example: '@quantity', '@amount', '@mapped_code'.
-    |
     */
 
     'formats' => [
@@ -47,10 +29,10 @@ return [
                 'Base',
             ],
             'mapping' => [
-                'MatriculeSalarie' => 'employee.id', // TODO: Remplacer par le vrai matricule si différent de l'ID
+                'MatriculeSalarie' => 'employee.id',
                 'DateDebutPeriode' => 'slip.period.start_date|Ymd',
                 'DateFinPeriode' => 'slip.period.end_date|Ymd',
-                'CodeRubrique' => '@mapped_code', // Utilise le mapping défini ci-dessous
+                'CodeRubrique' => '@mapped_code',
                 'LibelleRubrique' => 'variable.label',
                 'Quantite' => '@quantity',
                 'Montant' => '@amount',
@@ -58,17 +40,21 @@ return [
                 'Base' => '@base',
             ],
             'code_mapping' => [
-                // Mapping PayrollVariableType (interne) => Code Silae (externe)
-                'std_hour' => '100',       // Heures normales
-                'overtime_25' => '200',    // Heures sup 25%
-                'overtime_50' => '205',    // Heures sup 50%
-                'night_hour' => '300',     // Heures de nuit
-                'sunday_hour' => '310',    // Heures dimanche
-                'absence' => '900',        // Absences
-                'bonus' => '500',          // Primes génériques (à affiner selon le code variable)
-                'expense' => '600',        // Remboursement de frais
-                'meal_voucher' => '700',   // Titres restaurant
-                'transport' => '750',      // Indemnité transport
+                // Heures
+                'std_hour' => '100',
+                'overtime_25' => '200',
+                'overtime_50' => '205',
+                'night_hour' => '300',
+                'sunday_hour' => '310',
+                'absence' => '900',
+                // Primes & Indemnités
+                'bonus_panier' => '510',
+                'bonus_trajet' => '520',
+                'bonus' => '500', // Prime générique
+                // Remboursements
+                'expense' => '600',
+                'meal_voucher' => '700',
+                'transport' => '750',
             ],
         ],
 
@@ -94,7 +80,9 @@ return [
                 'night_hour' => 'HNUIT',
                 'sunday_hour' => 'HDIM',
                 'absence' => 'ABS',
-                'bonus' => 'PRIME',
+                'bonus_panier' => 'PAN',
+                'bonus_trajet' => 'TRAJ',
+                'bonus' => 'PRM',
                 'expense' => 'NDF',
                 'meal_voucher' => 'TR',
                 'transport' => 'TRANS',
