@@ -2,14 +2,19 @@
 
 namespace App\Observers\NoteFrais;
 
+use App\Enums\Facturation\SalesDocumentStatus;
+use App\Enums\Facturation\SalesDocumentType;
 use App\Enums\NoteFrais\ExpenseStatus;
 use App\Models\Chantiers\Chantiers;
+use App\Models\Facturation\SalesDocument;
 use App\Models\NoteFrais\Expense;
 use App\Models\User;
 use App\Notifications\NoteFrais\ExpenseStatusUpdatedNotification;
 use App\Notifications\NoteFrais\ExpenseSubmittedNotification;
 use App\Services\Comptabilite\ExpenseComptaService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 
 class ExpenseObserver
 {
@@ -17,79 +22,68 @@ class ExpenseObserver
     public function saving(Expense $expense): void
     {
         // --- LOGIQUE DE CALCUL AUTOMATIQUE ---
-
-        // Cas 1 : L'utilisateur a saisi TTC et TVA (Cas le plus fréquent)
-        // On déduit le HT : 120€ TTC - 20€ TVA = 100€ HT
         if ($expense->amount_ttc > 0 && $expense->vat_amount !== null && $expense->amount_ht == 0) {
             $expense->amount_ht = $expense->amount_ttc - $expense->vat_amount;
         }
-
-        // Cas 2 : L'utilisateur a saisi HT et TVA (Cas facture fournisseur)
-        // On calcule le TTC : 100€ HT + 20€ TVA = 120€ TTC
         elseif ($expense->amount_ht > 0 && $expense->vat_amount !== null && $expense->amount_ttc == 0) {
             $expense->amount_ttc = $expense->amount_ht + $expense->vat_amount;
         }
-
-        // Cas 3 : Sécurité anti-négatifs
         if ($expense->amount_ht < 0) $expense->amount_ht = 0;
-
-        // --- SUIVI DES COÛTS ---
-        // (Identique à avant, on gère les changements de statut)
-    }
-    public function saved(Expense $expense): void
-    {
-
-        // 2. Mise à jour du coût chantier
-        // On le fait si le statut change (ex: Submitted -> Approved)
-        if ($expense->isDirty('status') || $expense->isDirty('amount_ht') || $expense->isDirty('chantiers_id')) {
-            $this->updateChantiersExpensesCost($expense->chantiers_id);
-
-            // Si on change de projet, update l'ancien
-            if ($expense->getOriginal('project_id')) {
-                $this->updateChantiersExpensesCost($expense->getOriginal('chantiers_id'));
-            }
-        }
-
-        // NOTIFICATION 1 : Soumission (Draft -> Submitted)
-        if ($expense->isDirty('status') && $expense->status === ExpenseStatus::Submitted) {
-            // Trouver le manager (Ou les admins du tenant)
-            // Simplification : on notifie tous les admins de la company
-            $managers = User::where('company_id', $expense->company_id)
-                ->where('is_company_admin', true) // Supposons un flag admin
-                ->get();
-
-            Notification::send($managers, new ExpenseSubmittedNotification($expense));
-        }
-
-        // NOTIFICATION 2 : Décision (Submitted -> Approved/Rejected)
-        if ($expense->isDirty('status') && in_array($expense->status, [ExpenseStatus::Approved, ExpenseStatus::Rejected])) {
-            // On notifie l'employé s'il a un compte utilisateur
-            if ($expense->employee->user) {
-                $expense->employee->user->notify(new ExpenseStatusUpdatedNotification($expense));
-            }
-        }
     }
 
     /**
      * @throws \Throwable
      */
-    public function updated(Expense $expense): void
+    public function saved(Expense $expense): void
     {
-        // 1. Détection de la validation : Est-ce que le champ de validation a changé
-        //    ET est-ce qu'il est maintenant à TRUE ?
-        if ($expense->wasChanged('is_validated') && $expense->is_validated === true) {
+        // 1. Mise à jour du coût chantier
+        if ($expense->isDirty('status', 'amount_ht', 'chantiers_id')) {
+            $this->updateChantiersExpensesCost($expense->chantiers_id);
 
-            // 2. Vérification de la comptabilisation : S'assurer qu'elle n'est pas déjà comptabilisée.
-            if (!$expense->is_posted) {
+            if ($expense->wasChanged('chantiers_id')) {
+                $this->updateChantiersExpensesCost($expense->getOriginal('chantiers_id'));
+            }
+        }
 
-                // 3. Appel du service de comptabilisation
-                /** @var ExpenseComptaService $service */
-                $service = app(ExpenseComptaService::class);
+        // 2. Gestion des notifications et de la comptabilisation en fonction du statut
+        if ($expense->wasChanged('status')) {
+            switch ($expense->status) {
+                case ExpenseStatus::Submitted:
+                    if ($expense->getMedia('proof')->count() === 0) {
+                        $expense->status = ExpenseStatus::Draft;
+                        $expense->saveQuietly();
+                        throw ValidationException::withMessages([
+                           'proof' => 'Un justificatif est obligatoire pour soumettre la note de frais.',
+                        ]);
+                    }
 
-                // On pourrait utiliser un Job pour déporter la charge du traitement :
-                // PostExpenseEntryJob::dispatch($expense);
-                // Mais pour une logique simple d'Observer, l'appel direct est suffisant.
-                $service->postExpenseEntry($expense);
+                    $managers = User::where('company_id', $expense->company_id)
+                        ->where('is_company_admin', true)
+                        ->get();
+                    Notification::send($managers, new ExpenseSubmittedNotification($expense));
+                    break;
+
+                case ExpenseStatus::Approved:
+                    if ($expense->employee->user) {
+                        $expense->employee->user->notify(new ExpenseStatusUpdatedNotification($expense));
+                    }
+                    // Comptabilisation
+                    try {
+                        app(ExpenseComptaService::class)->postExpenseEntry($expense);
+                    } catch (\Exception $e) {
+                        Log::error("Erreur de comptabilisation NDF {$expense->id}: " . $e->getMessage());
+                    }
+                    // Refacturation
+                    if ($expense->is_billable) {
+                        $this->billExpenseToClient($expense);
+                    }
+                    break;
+
+                case ExpenseStatus::Rejected:
+                    if ($expense->employee->user) {
+                        $expense->employee->user->notify(new ExpenseStatusUpdatedNotification($expense));
+                    }
+                    break;
             }
         }
     }
@@ -99,16 +93,49 @@ class ExpenseObserver
         $this->updateChantiersExpensesCost($expense->chantiers_id);
     }
 
-    // Recalcul du coût des frais sur le chantier
     private function updateChantiersExpensesCost(?int $chantiersId): void
     {
         if (!$chantiersId) return;
 
-        // On ne compte que les frais VALIDÉS ou PAYÉS dans le coût réel
         $total = Expense::where('chantiers_id', $chantiersId)
-            ->whereIn('status', [ExpenseStatus::Approved, ExpenseStatus::Paid])
-            ->sum('amount_ht'); // Le coût pour l'entreprise est le HT (si on récupère la TVA)
+            ->whereIn('status', [ExpenseStatus::Approved, ExpenseStatus::Paid, ExpenseStatus::Posted])
+            ->sum('amount_ht');
 
         Chantiers::where('id', $chantiersId)->update(['total_expenses_cost' => $total]);
+    }
+
+    private function billExpenseToClient(Expense $expense): void
+    {
+        if (!$expense->chantiers_id || !$expense->chantier->client_id) {
+            return;
+        }
+
+        // On cherche une facture brouillon pour ce chantier, sinon on en crée une.
+        $invoice = SalesDocument::firstOrCreate(
+            [
+                'company_id' => $expense->company_id,
+                'chantiers_id' => $expense->chantiers_id,
+                'type' => SalesDocumentType::Invoice,
+                'status' => SalesDocumentStatus::Draft,
+            ],
+            [
+                'tiers_id' => $expense->chantier->client_id,
+                'date' => now(),
+                'due_date' => now()->addDays(30),
+            ]
+        );
+
+        // On ajoute la ligne de dépense à la facture.
+        $invoice->lines()->create([
+            'description' => "Refacturation NDF: {$expense->label}",
+            'quantity' => 1,
+            'unit_price' => $expense->amount_ttc, // On refacture le TTC
+            'vat_rate' => 0, // La TVA est déjà incluse dans le prix
+        ]);
+
+        $invoice->recalculate();
+
+        // On marque la dépense comme refacturée.
+        $expense->update(['has_been_billed' => true]);
     }
 }

@@ -2,9 +2,12 @@
 
 namespace App\Observers\Banque;
 
+use App\Enums\Banque\PaymentStatus;
 use App\Enums\Facturation\SalesDocumentStatus;
 use App\Models\Banque\Payment;
 use App\Models\Facturation\SalesDocument;
+use App\Services\Comptabilite\PaymentComptaService;
+use Illuminate\Support\Facades\Log;
 
 class PaymentObserver
 {
@@ -20,28 +23,23 @@ class PaymentObserver
      */
     public function updated(Payment $payment): void
     {
-        // Règle 1: Mise à jour du Solde Bancaire
-        // On ne met à jour le solde que si :
-        // 1. Le statut est passé à 'cleared' (encaissé/décaissé)
-        // 2. Un compte bancaire est affecté
-        // 3. Le statut POUVAIT être autre chose qu'un rapprochement déjà fait
-        if ($payment->isDirty('status') && $payment->status === 'cleared' && $payment->bank_account_id) {
+        // Si le statut du paiement a changé
+        if ($payment->isDirty('status')) {
+            // Règle 1: Le paiement est rapproché ('cleared')
+            if ($payment->status === PaymentStatus::Cleared && $payment->bank_account_id) {
+                // Mise à jour du solde bancaire
+                $amountToChange = $payment->is_incoming ? $payment->amount : -$payment->amount;
+                $payment->bankAccount->updateBalance($amountToChange);
 
-            // Le montant à ajouter/soustraire dépend si c'est un encaissement ou un décaissement.
-            // Le modèle Payment a une méthode 'getIsIncomingAttribute'
-            $amountToChange = $payment->is_incoming
-                ? $payment->amount // Encaissement (ajouter)
-                : -$payment->amount; // Décaissement (soustraire)
-
-            // On met à jour le solde du compte
-            $payment->bankAccount->updateBalance($amountToChange);
-        }
-
-        // Règle 2: Mise à jour du statut de la Facture/Achat
-        // Si le statut passe à 'cleared', on met à jour le statut du document lié.
-        if ($payment->isDirty('status') && $payment->status === 'cleared' && $payment->payable) {
-            // Exemple : Mettre à jour l'entité payable (Facture/Achat) pour dire qu'elle est payée.
-            // $payment->payable->checkPaymentStatus(); // Logique complexe de statut de document
+                // Comptabilisation du règlement
+                try {
+                    $comptaService = new PaymentComptaService();
+                    $comptaService->postPaymentEntry($payment);
+                    Log::info("Paiement #{$payment->id} comptabilisé avec succès.");
+                } catch (\Exception $e) {
+                    Log::error("Erreur lors de la comptabilisation du paiement #{$payment->id}: " . $e->getMessage());
+                }
+            }
         }
     }
 
@@ -58,13 +56,12 @@ class PaymentObserver
         }
 
         // Si le paiement est supprimé et qu'il avait été rapproché, on annule l'impact sur le solde.
-        if ($payment->status === 'cleared' && $payment->bank_account_id) {
+        if ($payment->getOriginal('status') === PaymentStatus::Cleared && $payment->bank_account_id) {
             // Inverse l'opération faite lors du 'cleared'
-            $amountToChange = $payment->is_incoming
-                ? -$payment->amount // Encaissement -> on soustrait
-                : $payment->amount; // Décaissement -> on ajoute
-
+            $amountToChange = $payment->is_incoming ? -$payment->amount : $payment->amount;
             $payment->bankAccount->updateBalance($amountToChange);
+
+            // TODO: Contre-passer l'écriture comptable du paiement
         }
     }
 

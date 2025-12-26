@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class BankAccount extends Model
 {
@@ -52,15 +53,23 @@ class BankAccount extends Model
     }
 
     /**
-     * Permet de mettre à jour le solde (appelé lors d'une synchro ou d'un pointage)
+     * Met à jour le solde de manière atomique.
+     *
+     * @param float $amountToAdd Montant à ajouter (peut être négatif pour soustraire).
      */
-    public function updateBalance(float $newBalance): void
+    public function updateBalance(float $amountToAdd): void
     {
-        if ($newBalance > 0) {
-            $this->increment('current_balance', $newBalance);
-        } elseif ($newBalance < 0) {
-            $this->decrement('current_balance', $newBalance);
+        if ($amountToAdd == 0) {
+            return;
         }
+
+        // Utilisation d'une requête raw pour garantir l'atomicité et éviter les race conditions.
+        DB::table('bank_accounts')
+            ->where('id', $this->id)
+            ->update(['current_balance' => DB::raw("current_balance + {$amountToAdd}")]);
+
+        // On rafraîchit le modèle pour que l'instance actuelle ait le nouveau solde.
+        $this->refresh();
 
         if ($this->type !== BankAccountType::Bank) {
             $this->touch('last_synced_at');

@@ -4,6 +4,7 @@ namespace App\Models\Banque;
 
 use App\Enums\Banque\PaymentMethod;
 use App\Enums\Banque\PaymentStatus;
+use App\Interfaces\Payable;
 use App\Models\Core\Company;
 use App\Models\Tiers\Tiers;
 use App\Observers\Banque\PaymentObserver;
@@ -54,16 +55,14 @@ class Payment extends Model
 
     /**
      * Helper pour savoir si le paiement est un Encaissement (Client) ou un Décaissement (Fournisseur/Achat).
-     * Dans l'état actuel, il faudrait vérifier le type de `payable()`.
-     * Ex: Si payable est une 'Invoice', c'est un encaissement (montant positif pour le solde).
-     * Si payable est une 'Purchase', c'est un décaissement (montant négatif pour le solde).
-     * On va ajouter un attribut simple pour l'instant :
      */
     public function getIsIncomingAttribute(): bool
     {
-        // Logique à affiner plus tard selon les modèles réels (Invoice/Purchase)
-        // Supposons que les paiements Facture sont des encaissements.
-        // On se base sur le champ 'payable_type' (ex: App\Models\Facturation\Invoice)
-        return str_contains($this->payable_type ?? '', 'Invoice');
+        if ($this->payable instanceof Payable) {
+            return $this->payable->isIncomingPayment();
+        }
+
+        // Fallback ou erreur si le modèle n'implémente pas l'interface
+        return false;
     }
 }

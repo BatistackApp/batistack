@@ -10,13 +10,15 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Tags\HasTags;
 
 #[ObservedBy([DocumentObserver::class])]
 class Document extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, BelongsToCompany;
+    use HasFactory, InteractsWithMedia, BelongsToCompany, Searchable, HasTags;
     protected $guarded = [];
 
     public function folder(): BelongsTo
@@ -38,11 +40,31 @@ class Document extends Model implements HasMedia
     }
 
     // Le fichier physique
-    // Spatie permet de définir des collections (ex: 'files', 'images')
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('file')
-            ->singleFile(); // Un document = Un fichier physique (pour la version simple)
+            ->singleFile();
+    }
+
+    /**
+     * Get the indexable data array for the model.
+     *
+     * @return array
+     */
+    public function toSearchableArray(): array
+    {
+        $array = $this->toArray();
+
+        // On y ajoute le contenu du fichier extrait par Spatie/Tika
+        // Cette partie nécessite que le driver Tika soit configuré pour Spatie Media Library
+        if ($this->hasMedia('file')) {
+            $array['file_content'] = (string) $this->getFirstMedia('file')->getCustomProperty('text');
+        }
+
+        // On ajoute les tags pour qu'ils soient aussi cherchables
+        $array['tags'] = $this->tags->pluck('name')->implode(' ');
+
+        return $array;
     }
 
     // Helper pour récupérer l'URL

@@ -41,8 +41,11 @@ class PayrollCalculator
      */
     protected function processTimesheets(PayrollSlip $slip, $startDate, $endDate, $employeeId, &$totalHours): void
     {
-        $timesheets = Timesheet::where('employee_id', $employeeId)
-            ->whereBetween('date', [$startDate, $endDate])
+        $timesheetsQuery = Timesheet::where('employee_id', $employeeId)
+            ->whereBetween('date', [$startDate, $endDate]);
+
+        // Agrégation des heures par type
+        $timesheets = (clone $timesheetsQuery)
             ->select('type', DB::raw('SUM(hours) as total_hours'))
             ->groupBy('type')
             ->get();
@@ -53,7 +56,7 @@ class PayrollCalculator
             if ($payrollType) {
                 $slip->variables()->create([
                     'type' => $payrollType,
-                    'code' => $this->getPayrollCode($payrollType),
+                    'code' => $payrollType->value, // On utilise la valeur de l'enum comme code interne
                     'label' => $payrollType->getLabel(),
                     'quantity' => $ts->total_hours,
                     'unit' => 'h',
@@ -61,6 +64,31 @@ class PayrollCalculator
                 ]);
                 $totalHours += $ts->total_hours;
             }
+        }
+
+        // Comptage des paniers repas et zones de trajet
+        $lunchBaskets = (clone $timesheetsQuery)->where('lunch_basket', true)->count();
+        if ($lunchBaskets > 0) {
+            $slip->variables()->create([
+                'type' => PayrollVariableType::Bonus,
+                'code' => 'bonus_panier', // Code interne pour le panier
+                'label' => 'Indemnité Panier Repas',
+                'quantity' => $lunchBaskets,
+                'unit' => 'u',
+                'source' => 'Pointage',
+            ]);
+        }
+
+        $travelZones = (clone $timesheetsQuery)->where('travel_zone', true)->count();
+        if ($travelZones > 0) {
+            $slip->variables()->create([
+                'type' => PayrollVariableType::Bonus,
+                'code' => 'bonus_trajet', // Code interne pour le trajet
+                'label' => 'Indemnité de Trajet',
+                'quantity' => $travelZones,
+                'unit' => 'u',
+                'source' => 'Pointage',
+            ]);
         }
     }
 
@@ -82,7 +110,7 @@ class PayrollCalculator
 
             $slip->variables()->create([
                 'type' => PayrollVariableType::ExpenseRefund,
-                'code' => 'RFRAIS',
+                'code' => 'expense',
                 'label' => 'Remboursement Note de Frais: ' . $expense->label,
                 'quantity' => $amount,
                 'unit' => '€',
@@ -109,23 +137,6 @@ class PayrollCalculator
             TimesheetType::SundayHour => PayrollVariableType::SundayHour,
             TimesheetType::Absence => PayrollVariableType::Absence,
             default => null, // On ignore les autres types comme 'Training' pour l'instant
-        };
-    }
-
-    /**
-     * Renvoie le code d'export de paie (ex: HN, HS25) basé sur le type.
-     */
-    protected function getPayrollCode(PayrollVariableType $type): string
-    {
-        return match ($type) {
-            PayrollVariableType::StandardHour => 'HN',
-            PayrollVariableType::Overtime25 => 'HS25',
-            PayrollVariableType::Overtime50 => 'HS50',
-            PayrollVariableType::NightHour => 'HDN',
-            PayrollVariableType::SundayHour => 'HDIM',
-            PayrollVariableType::Absence => 'ABS',
-            PayrollVariableType::Bonus => 'PRIME',
-            PayrollVariableType::ExpenseRefund => 'RFRAIS',
         };
     }
 }

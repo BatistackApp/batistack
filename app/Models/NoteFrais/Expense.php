@@ -14,11 +14,13 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[ObservedBy([ExpenseObserver::class])]
-class Expense extends Model
+class Expense extends Model implements HasMedia
 {
-    use HasFactory, BelongsToCompany;
+    use HasFactory, BelongsToCompany, InteractsWithMedia;
 
     protected $guarded = [];
 
@@ -50,6 +52,12 @@ class Expense extends Model
             'has_been_billed' => 'boolean',
             'reimbursed_at' => 'datetime',
         ];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('proof')
+            ->singleFile();
     }
 
     // Scopes utiles pour Filament
