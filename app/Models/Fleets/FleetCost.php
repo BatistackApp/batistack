@@ -2,17 +2,17 @@
 
 namespace App\Models\Fleets;
 
-use App\Observers\Fleets\InsuranceObserver;
+use App\Models\Core\Company;
 use App\Trait\BelongsToCompany;
-use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-#[ObservedBy([InsuranceObserver::class])]
-class Insurance extends Model
+class FleetCost extends Model
 {
-    use HasFactory;
+    use BelongsToCompany;
+
     protected $guarded = [];
 
     public function fleet(): BelongsTo
@@ -20,14 +20,16 @@ class Insurance extends Model
         return $this->belongsTo(Fleet::class);
     }
 
+    public function sourceable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
     protected function casts(): array
     {
         return [
-            'start_date' => 'date',
-            'end_date' => 'date',
-            'annual_cost' => 'decimal:2',
-            'is_active' => 'boolean',
-            'notified_at' => 'datetime',
+            'amount' => 'decimal:2',
+            'date' => 'date',
         ];
     }
 }
