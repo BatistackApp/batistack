@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1](https://github.com/BatistackApp/batistack/releases/tag/v0.2.1) (2025-12-26)
+
+### Features
+
+- Implémenter le traitement des modèles 3D via observateur et job ([cb7717b](https://github.com/BatistackApp/batistack/commit/cb7717b552171fdf8734b25e649a4863152332ef))
+- **gpao:** Ajouter un service de données pour le diagramme de Gantt ([2d23813](https://github.com/BatistackApp/batistack/commit/2d23813509a47c949d8dcac9f70dfd966f38d7fd))
+- Ajout de la gestion des déchets et optimisation des OF ([060dbdf](https://github.com/BatistackApp/batistack/commit/060dbdf43b034cfce1db020ec2119878c2ba13bc))
+- Gérer l'inventaire des produits d'intervention et le calendrier ([a209f83](https://github.com/BatistackApp/batistack/commit/a209f837975046e45154db7cc20448232a1761ba))
+- Gérer la séquence des factures pour les contrats de location ([939bc9f](https://github.com/BatistackApp/batistack/commit/939bc9f30f828f86f6dd857a55778d30c73e9b31))
+- **flotte:** Ajouter le calcul automatique de dépréciation de la flotte ([2e76750](https://github.com/BatistackApp/batistack/commit/2e767504deb20f5ba945b68bfb17dbb05f180c50))
+- **fleets:** Ajouter modèle FleetCost et observateur Insurance ([0a3a782](https://github.com/BatistackApp/batistack/commit/0a3a78206b0def6ffcaf1654d0750bead44244be))
+- Intègre la gestion des coûts de flotte via les observateurs ([8c962e6](https://github.com/BatistackApp/batistack/commit/8c962e6d766f33ed6fd98511d398b44aef1ee2e4))
+- **fleet-costs:** créer la table des coûts de flotte ([dd64548](https://github.com/BatistackApp/batistack/commit/dd6454864c4ccee7074cb7d2ac31aab306f37056))
+- **comptabilite:** Ajouter le service de comptabilisation de la paie ([7381d4d](https://github.com/BatistackApp/batistack/commit/7381d4d55568a646307853cefb8efe0a0bf8bedb))
+- **compta:** Ajouter un plan comptable par défaut pour les entreprises ([4e176f6](https://github.com/BatistackApp/batistack/commit/4e176f68ace204a67693509ef37af8bac8d2d0ef))
+- Ajouter la recherche documentaire et les politiques d'accès ([153c1db](https://github.com/BatistackApp/batistack/commit/153c1db33db18ea9909f06d2a1b926114f1fa42e))
+- **note-frais:** Ajout des justificatifs et refacturation des NDF ([dbfc293](https://github.com/BatistackApp/batistack/commit/dbfc29377addd523a912adf29d3372800af19817))
+- **paie,rh:** Gérer les indemnités et valider les pointages ([9168c03](https://github.com/BatistackApp/batistack/commit/9168c03b60d4410c8d07e5f5facbbda631f730b0))
+- **comptabilite:** Ajouter la comptabilisation des paiements ([0606423](https://github.com/BatistackApp/batistack/commit/06064238be662018d62194d788d8a226d076c1ff))
+- **documents-achat:** Ajout des lignes et refactorisation clé unique ([7d30ad6](https://github.com/BatistackApp/batistack/commit/7d30ad69f377a0e06a4280c7254fb975095ce082))
+- Ajout du suivi des mouvements de stock et observateurs ([e06e3ee](https://github.com/BatistackApp/batistack/commit/e06e3ee4067cb1f78ae2d2ca840151b0071e79c3))
+- Introduire le scope de marge réelle et optimiser les requêtes ([1ec2f92](https://github.com/BatistackApp/batistack/commit/1ec2f92bd241291020621cd4d9083a4466b424d2))
+- Implémenter la validation SIRET/TVA et l'observateur Employé ([db98ce6](https://github.com/BatistackApp/batistack/commit/db98ce660f46fa4161d7bc8710de8e039d5f3184))
 ## [0.2.0](https://github.com/BatistackApp/batistack/releases/tag/v0.2.0) (2025-12-26)
 
 ### Features
