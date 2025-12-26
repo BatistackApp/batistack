@@ -64,6 +64,7 @@ class Fleet extends Model implements HasMedia
             'last_check_date' => 'date',
             'type' => FleetType::class,
             'mileage' => 'integer',
+            'internal_daily_cost' => 'decimal:2',
         ];
     }
 }
