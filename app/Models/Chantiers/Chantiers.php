@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([ChantiersObserver::class])]
@@ -22,6 +23,11 @@ class Chantiers extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Tiers::class);
+    }
+
+    public function projectModels(): HasMany
+    {
+        return $this->hasMany(ProjectModel::class);
     }
 
     protected function casts(): array
