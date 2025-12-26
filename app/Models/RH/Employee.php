@@ -6,7 +6,9 @@ use App\Models\Core\Company;
 use App\Models\Fleets\Fleet;
 use App\Models\Fleets\FleetAssignment;
 use App\Models\User;
+use App\Observers\RH\EmployeeObserver;
 use App\Trait\BelongsToCompany;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Notifications\Notifiable; // Import the Notifiable trait
 
+#[ObservedBy([EmployeeObserver::class])]
 class Employee extends Model
 {
     use HasFactory, BelongsToCompany, Notifiable; // Add Notifiable trait

@@ -7,12 +7,14 @@ use App\Models\Core\Company;
 use App\Models\Tiers\Tiers;
 use App\Observers\Chantiers\ChantiersObserver;
 use App\Trait\BelongsToCompany;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property string $total_fleet_cost
@@ -93,6 +95,21 @@ class Chantiers extends Model
     public function getMarginDifferenceAttribute(): float
     {
         return $this->real_margin - $this->budgeted_margin;
+    }
+
+    // --- SCOPES POUR LA PERFORMANCE ---
+
+    /**
+     * Ajoute le calcul de la marge réelle directement dans la requête SQL.
+     *
+     * @param Builder $query
+     * @return Builder
+     */
+    public function scopeWithRealMargin(Builder $query): Builder
+    {
+        return $query->addSelect([
+            'real_margin' => DB::raw('total_sales_revenue - (total_labor_cost + total_material_cost + total_rental_cost + total_purchase_cost + total_fleet_cost)')
+        ]);
     }
 
 

@@ -63,6 +63,13 @@ Schedule::command('fleet:check-assignment-reminders')
     ->sendOutputTo(storage_path('logs/schedule/fleet-check-assignment-reminders.log'))
     ->description("Vérifie les assignations de flotte dont la fin approche et envoie des rappels.");
 
+Schedule::job(new \App\Jobs\Fleets\DepreciateFleetValueJob())
+    ->monthlyOn(1, '02:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/fleet-depreciate-value.log'))
+    ->description("Calcule et met à jour la valeur dépréciée de la flotte.");
+
 Schedule::command('gpao:check-delays')
     ->dailyAt('09:30')
     ->onOneServer()

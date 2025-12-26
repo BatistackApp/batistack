@@ -90,10 +90,12 @@ class ProductionOrderObserver
 
                     // 1. Décrémenter les stocks des composants et calculer leur coût
                     foreach ($productToProduce->children as $component) {
-                        $requiredQuantity = $component->pivot->quantity * $quantityProduced;
+                        $baseQuantity = $component->pivot->quantity * $quantityProduced;
+                        $wasteFactor = 1 + ($component->pivot->waste_percentage / 100);
+                        $requiredQuantity = $baseQuantity * $wasteFactor;
+
                         $totalMaterialCost += $requiredQuantity * ($component->buying_price ?? 0);
 
-                        // Trouver le stock du composant dans le dépôt spécifié
                         $stock = InventoryStock::where('product_id', $component->id)
                             ->where('warehouse_id', $warehouseId)
                             ->first();
@@ -111,20 +113,16 @@ class ProductionOrderObserver
                     }
 
                     // 2. Incrémenter le stock du produit fini
-                    $finishedProductStock = InventoryStock::where('product_id', $productToProduce->id)
-                        ->where('warehouse_id', $warehouseId)
-                        ->first();
-
-                    if (!$finishedProductStock) {
-                        // Si pas de stock existant, le créer dans le dépôt spécifié
-                        $finishedProductStock = InventoryStock::create([
+                    $finishedProductStock = InventoryStock::firstOrCreate(
+                        [
                             'product_id' => $productToProduce->id,
-                            'company_id' => $productionOrder->company_id,
                             'warehouse_id' => $warehouseId,
+                        ],
+                        [
+                            'company_id' => $productionOrder->company_id,
                             'quantity_on_hand' => 0,
-                            'min_stock_level' => 0,
-                        ]);
-                    }
+                        ]
+                    );
 
                     $finishedProductStock->increment('quantity_on_hand', $quantityProduced);
                     Log::info("OF {$productionOrder->reference}: Incrémenté {$quantityProduced} de {$productToProduce->name}. Stock total: {$finishedProductStock->quantity_on_hand}.");
@@ -137,8 +135,6 @@ class ProductionOrderObserver
 
             } catch (Exception $e) {
                 Log::error("Erreur lors du traitement de l'OF {$productionOrder->reference}: " . $e->getMessage());
-                // Optionnel : Rejeter la transaction ou marquer l'OF avec un statut d'erreur
-                // throw $e; // Rejeter la transaction si l'erreur est critique
             }
         }
     }
@@ -168,7 +164,6 @@ class ProductionOrderObserver
             return;
         }
 
-        // Si l'assignation est une équipe, notifier tous les membres
         if ($assignedTo instanceof Team) {
             foreach ($assignedTo->members as $member) {
                 if (method_exists($member, 'notify')) {
@@ -176,7 +171,6 @@ class ProductionOrderObserver
                 }
             }
         }
-        // Si c'est un employé ou un autre type d'entité notifiable
         elseif (method_exists($assignedTo, 'notify')) {
             $assignedTo->notify(new ProductionOrderNotification($productionOrder, $type));
         }

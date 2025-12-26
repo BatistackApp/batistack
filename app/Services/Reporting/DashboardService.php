@@ -28,17 +28,13 @@ class DashboardService
      */
     public function getChantiersRentability(int $limit = 5, string $order = 'desc'): Collection
     {
-        // On récupère les chantiers actifs ou terminés récemment
-        // Le calcul de la marge se fait via les accesseurs du modèle, donc on récupère les modèles
-        // Attention : pour de gros volumes, il faudrait passer par une requête SQL brute ou une vue matérialisée
-
         return Chantiers::forCompany($this->company)
-            ->get() // On charge en mémoire pour utiliser les accesseurs (optimisation possible plus tard)
-            ->sortBy([
-                ['real_margin', $order]
-            ])
-            ->take($limit)
+            ->withRealMargin() // Utilisation du scope pour le calcul en DB
+            ->orderBy('real_margin', $order)
+            ->limit($limit)
+            ->get()
             ->map(function ($chantier) {
+                // Les accesseurs peuvent toujours être utilisés pour les calculs finaux
                 return [
                     'id' => $chantier->id,
                     'name' => $chantier->name,
@@ -118,6 +114,10 @@ class DashboardService
             $assignStart = $assignment->start_date->greaterThan($startDate) ? $assignment->start_date : $startDate;
             $effectiveEndDate = $assignment->end_date ?? $endDate;
             $assignEnd = $effectiveEndDate->lessThan($endDate) ? $effectiveEndDate : $endDate;
+
+            if ($assignStart->greaterThan($assignEnd)) {
+                return 0;
+            }
 
             // On calcule la différence en jours
             return $assignStart->diffInDays($assignEnd) + 1; // +1 pour inclure le jour de début

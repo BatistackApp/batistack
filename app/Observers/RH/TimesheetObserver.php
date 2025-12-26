@@ -8,6 +8,7 @@ use App\Models\GPAO\ProductionOrder;
 use App\Models\Interventions\Intervention;
 use App\Models\RH\Timesheet;
 use DB;
+use Illuminate\Validation\ValidationException;
 
 class TimesheetObserver
 {
@@ -39,6 +40,21 @@ class TimesheetObserver
 
         if ($linkedEntities > 1) {
             throw new \Exception('Un pointage ne peut être lié qu\'à un seul chantier, ordre de fabrication ou intervention.');
+        }
+
+        // Règle Métier 4 : Empêcher les doublons de pointage pour un même jour/employé/type
+        if ($timesheet->isDirty('type', 'date', 'employee_id')) {
+            $exists = Timesheet::where('employee_id', $timesheet->employee_id)
+                ->where('date', $timesheet->date)
+                ->where('type', $timesheet->type)
+                ->where('id', '!=', $timesheet->id) // Exclure le modèle actuel en cas de mise à jour
+                ->exists();
+
+            if ($exists) {
+                throw ValidationException::withMessages([
+                    'type' => "Un pointage de type '{$timesheet->type->getLabel()}' existe déjà pour cet employé à cette date."
+                ]);
+            }
         }
     }
 
@@ -74,7 +90,7 @@ class TimesheetObserver
             // Si une lecture d'heures est fournie et qu'elle est supérieure à la valeur actuelle de l'actif
             if ($timesheet->hours_read !== null && $timesheet->hours_read > $fleet->hours_meter) {
                 $fleet->updateQuietly([
-                    'hours_meter' => $fleet->hours_meter, // Correction: Utiliser la valeur du timesheet
+                    'hours_meter' => $timesheet->hours_read,
                 ]);
             }
         }
