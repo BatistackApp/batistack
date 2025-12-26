@@ -29,16 +29,18 @@ A. MODULES TERMINÉS / STABLES (Production)
 | Pointage / RH | Saisie Heures, Calcul Coût Chantier. | Alerte Pointage manquant (CheckMissingTimesheetsCommand.php, MissingTimesheetNotification.php). |
 | Notes de Frais | Dépenses, TVA auto, Validation. | Workflow Validation Manager, Comptabilisation auto. post-validation (ExpenseComptaService). |
 | GED | Documents, Métadonnées. | Alerte expiration (Assurances). |
+| Comptabilité | Comptabilisation auto. (Ventes, Achats, NDF, Banque, Locations, Interventions). Génération du FEC avec **numérotation séquentielle stricte (Journal/Date/ID)**. Reporting complet (Grand Livre consolidé, Journaux) en CSV. | |
+| Paie | Calcul des fiches de paie. **Export CSV configurable par Compagnie (Silae, Sage, Generic) avec support TR et Transport.** | |
+| Flottes | Gestion complète (Véhicules, Assurances, Maintenances). **Assignation sécurisée avec détection de conflits** et notifications. | |
+| GPAO | Gestion des Ordres de Fabrication (OF), planification, suivi de statut, mise à jour des stocks. **Inclut un système de calcul des besoins en matériaux (MRP simplifié) et la génération automatique de suggestions d'achats.** | |
+| Interventions | Gestion des interventions (Forfait ou Régie). **Déstockage intelligent (Dépôt par défaut), facturation client avec marge configurable et suivi de rentabilité, comptabilisation analytique des coûts.** | |
+| Locations | Gestion des contrats fournisseurs. **Support de la périodicité, alertes d'expiration et génération automatique des factures fournisseurs.** | |
 
 B. MODULES EN COURS (Focus Actuel)
 
 | Module | État actuel | Ce qu'il reste à faire / Fichiers récents |
-| Comptabilité | Avancé : Comptabilisation auto. des NDF, consommations Ulys, **factures de vente, factures fournisseurs et contrats de location**. Génération du FEC avec gestion des tiers et numérotation séquentielle conforme. Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**. | Finaliser les journaux (vente/achat/banque), Grand Livre. |
-| Paie | Avancé : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**. Génération d'exports CSV avec support de différents formats (Silae, Sage, générique), **prêt pour l'intégration des spécifications exactes**. | Finaliser l'export vers Silae/Sage. |
-| Flottes | Avancé : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage). Gestion des assurances avec alertes d'expiration. Gestion des maintenances avec alertes d'échéance. Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**. | |
-| GPAO | Avancé : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre et des matériaux, et les notifications d'assignation et de retard. | |
-| Locations | En cours : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique. | |
-| Interventions | En cours : Gestion des interventions, avec suivi des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures avec marge configurable. | |
+|---|---|---|
+| **3D Vision** | En cours | Intégration d'un viewer BIM/IFC pour la visualisation 3D des projets à partir des coordonnées GPS. |
 
 C. MODULES À FAIRE (Priorités Futures)
 
@@ -54,7 +56,7 @@ C. MODULES À FAIRE (Priorités Futures)
 | Compta/NDF | app/Services/Comptabilite/ExpenseComptaService.php | Service de comptabilisation des notes de frais, inclut `tier_id`. |
 | Compta/NDF | app/Observers/NoteFrais/ExpenseObserver.php | Déclenche la comptabilisation des NDF après validation. |
 | Compta/Ulys | app/Services/Comptabilite/UlysComptaService.php | Service de comptabilisation des consommations Ulys, inclut `tier_id`. |
-| Compta/FEC | app/Jobs/Comptabilite/GenerateFecJob.php | Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers et numérotation séquentielle conforme. |
+| Compta/FEC | app/Jobs/Comptabilite/GenerateFecJob.php | Génération du FEC avec numérotation séquentielle stricte (Journal/Date/ID) conforme DGFIP. |
 | Compta/Base | app/Models/Comptabilite/ComptaEntry.php | Modèle d'écriture comptable, inclut `tier_id` et relation `tier`. |
 | Compta/Reporting | app/Services/Comptabilite/ComptaReportingService.php | Service de récupération des données pour les journaux et le Grand Livre. |
 | Compta/Rapports | app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php | Commande Artisan pour générer les rapports comptables (journaux, grand livre) en CSV. Planifiée via `routes/console.php`. |
@@ -71,13 +73,14 @@ C. MODULES À FAIRE (Priorités Futures)
 | Banque/Transactions | app/Models/Banque/BankTransaction.php | Modèle des transactions bancaires importées. |
 | Banque/Transactions | app/Services/Comptabilite/BankTransactionComptaService.php | Service de comptabilisation des transactions bancaires. |
 | Banque/Transactions | app/Observers/Banque/BankTransactionObserver.php | Déclenche la comptabilisation des transactions bancaires. |
-| RH/Paie | app/Enums/Paie/PayrollVariableType.php | Enum des variables de paie (Heures, Primes, Frais). |
+| RH/Paie | app/Enums/Paie/PayrollVariableType.php | Enum des variables de paie (Heures, Primes, Frais, TR, Transport). |
 | Paie/Calcul | app/Services/Paie/PayrollCalculator.php | Service de calcul des fiches de paie (agrégation heures/frais). |
 | Paie/Export | app/Services/Paie/PayrollExportService.php | Service de génération du fichier CSV d'export de paie, avec logique Silae/Sage affinée. |
 | Paie/Export | app/Enums/Paie/PayrollExportFormat.php | Enum des formats d'export de paie (Silae, Sage, GenericCSV). |
-| Paie/Job | app/Jobs/Paie/GeneratePayrollExportJob.php | Orchestre le calcul et l'export de paie, attache le CSV au `PayrollSlip`. |
+| Paie/Job | app/Jobs/Paie/GeneratePayrollExportJob.php | Orchestre l'export de paie selon le format configuré sur la Compagnie (Silae/Sage/Generic). |
 | Paie/Structure | database/migrations/2025_12_10...create_payroll_slips_table.php | Structure de la fiche de paie. |
 | Paie/Structure | database/migrations/2025_12_12...add_processed_at_to_payroll_slips_table.php | Ajout du champ `processed_at` au `PayrollSlip`. |
+| Paie/Config | database/migrations/2025_12_26_180300_add_payroll_settings_to_companies_table.php | Ajout des paramètres d'export paie (Format, Ref Externe) à la Compagnie. |
 | Flottes/Base | app/Models/Fleets/Fleet.php | Modèle principal de la flotte, enrichi avec détails et relations d'assignation. |
 | Flottes/Types | app/Enums/Fleets/FleetType.php | Enum des types de véhicules de la flotte. |
 | Flottes/Ulys | app/Console/Commands/Fleets/SyncUlysConsumptionsCommand.php | Synchronisation des consommations Ulys. |
@@ -118,6 +121,7 @@ C. MODULES À FAIRE (Priorités Futures)
 | Locations/Automation | app/Observers/Locations/RentalContractLineObserver.php | Recalcule les totaux du contrat à chaque modification d'une ligne. |
 | Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
 | Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |
+| Locations/Structure | database/migrations/2025_12_26_183500_add_billing_periodicity_to_rental_contracts_table.php | Ajout du champ `next_billing_date` pour l'automatisation. |
 | GPAO/OF | database/migrations/2025_12_12_270000_add_total_material_cost_to_production_orders_table.php | Migration pour ajouter le coût des matériaux aux ordres de fabrication. |
 | Interventions/Base | app/Models/Interventions/Intervention.php | Modèle principal des interventions. |
 | Interventions/Base | app/Models/Interventions/InterventionProduct.php | Modèle pivot pour les produits utilisés dans une intervention. |
@@ -125,6 +129,7 @@ C. MODULES À FAIRE (Priorités Futures)
 | Interventions/Automation | app/Observers/Interventions/InterventionProductObserver.php | Recalcule le coût des matériaux et met à jour les stocks. |
 | Interventions/Compta | app/Services/Comptabilite/InterventionComptaService.php | Service de comptabilisation des coûts des interventions. |
 | Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |
+| Interventions/Structure | database/migrations/2025_12_26_183000_add_margin_fields_to_interventions_table.php | Ajout des champs de marge et rentabilité. |
 
 4. RÔLES UTILISATEURS (AGENTS)
 

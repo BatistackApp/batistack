@@ -95,7 +95,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
         - Il remplit les champs `CompAuxNum` et `CompAuxLib` avec les informations du `Tiers` associé à l'écriture.
-        - Il assure une numérotation séquentielle et ininterrompue du champ `EcritureNum` par journal et par mois, pour une conformité totale avec la norme DGFIP.
+        - **Numérotation Séquentielle** : Le job implémente une logique stricte pour garantir que le champ `EcritureNum` est séquentiel et ininterrompu par journal et par exercice, en utilisant un compteur en mémoire et un tri précis (`journal_id`, `date`, `id`).
     - **Reporting Comptable** :
         - Le service `app/Services/Comptabilite/ComptaReportingService.php` fournit des méthodes pour récupérer les écritures par journal (`getJournalEntries`) ou par compte (`getGeneralLedgerEntries`), et calculer les soldes (`getAccountBalanceAtDate`).
         - **Génération de Rapports Automatisée** : La commande `app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php` génère :
@@ -136,11 +136,12 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Préparation, calcul et export des fiches de paie.
 - **Implémentation Technique** :
     - **Service de Calcul** : Le service `app/Services/Paie/PayrollCalculator.php` est le moteur principal. Il collecte les heures (`Timesheet`) et les frais (`Expense`) pour une période donnée, les agrège et crée des `PayrollVariable` pour un `PayrollSlip`. **Il inclut désormais la gestion des différents types d'heures majorées (supplémentaires, nuit, dimanche) pour le calcul.**
-    - **Variables de Paie** : L'Enum `app/Enums/Paie/PayrollVariableType.php` est utilisé pour standardiser les différents types d'éléments de paie.
+    - **Variables de Paie** : L'Enum `app/Enums/Paie/PayrollVariableType.php` est utilisé pour standardiser les différents types d'éléments de paie (incluant désormais `MealVoucher` et `Transport`).
     - **Structure** : Les modèles `PayrollPeriods`, `PayrollSlip`, et `PayrollVariable` forment la structure de base pour stocker les données de paie. Le modèle `PayrollSlip` implémente `HasMedia` et inclut un champ `processed_at`.
     - **Export de Paie** :
         - Le service `app/Services/Paie/PayrollExportService.php` génère un fichier CSV à partir des `PayrollVariable` d'un `PayrollSlip`.
         - **Configuration Flexible** : Utilise `config/payroll.php` pour définir les formats d'export.
+        - **Configuration par Compagnie** : Le modèle `Company` inclut `payroll_export_format` et `payroll_external_reference_id` pour personnaliser l'export par client.
         - **Mapping des Codes** : Supporte un mapping configurable (`code_mapping`) pour traduire les types internes (`PayrollVariableType`) vers les codes spécifiques des logiciels de paie (Silae, Sage).
         - Le Job `app/Jobs/Paie/GeneratePayrollExportJob.php` orchestre le calcul via `PayrollCalculator` et l'export via `PayrollExportService`, puis attache le CSV au `PayrollSlip` via Spatie Media Library. **Il marque également les notes de frais comme remboursées après le traitement du bulletin de paie.**
 
