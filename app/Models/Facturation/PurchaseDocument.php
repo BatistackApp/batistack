@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[ObservedBy([PurchaseDocumentObserver::class])]
@@ -36,6 +37,11 @@ class PurchaseDocument extends Model
         return $this->belongsTo(Chantiers::class);
     }
 
+    public function lines(): HasMany
+    {
+        return $this->hasMany(PurchaseDocumentLine::class);
+    }
+
     protected function casts(): array
     {
         return [
@@ -50,6 +56,23 @@ class PurchaseDocument extends Model
     }
 
     // --- Logique Métier ---
+
+    /**
+     * Méthode centrale de recalcul des totaux.
+     */
+    public function recalculate(): void
+    {
+        $lines = $this->lines()->get();
+
+        $total_ht = $lines->sum('total_ht');
+        $total_vat = $lines->sum('total_vat');
+
+        $this->updateQuietly([
+            'total_ht' => $total_ht,
+            'total_vat' => $total_vat,
+            'total_ttc' => $total_ht + $total_vat,
+        ]);
+    }
 
     /**
      * Helper pour savoir si le document est verrouillé (non modifiable)
