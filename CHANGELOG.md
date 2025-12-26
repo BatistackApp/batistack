@@ -38,6 +38,7 @@ All notable changes to this project will be documented in this file.
 - Update Référenciel ([622bd87](https://github.com/BatistackApp/batistack/commit/622bd8720b15eb10a819667f6c4752569b1c65f0))
 - update system ([6f2ab92](https://github.com/BatistackApp/batistack/commit/6f2ab927c451baafc35ff24377c4e82aab10b2d5))
 - suppression de migrations obsolètes et renommage de fichiers ([029c09f](https://github.com/BatistackApp/batistack/commit/029c09f1f61ab11d04ccc821aaae2f049fb89403))
+
 ## [0.1.0](https://github.com/BatistackApp/batistack/releases/tag/v0.1.0) (2025-12-20)
 
 ### Features
