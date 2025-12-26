@@ -37,6 +37,7 @@ class Chantiers extends Model
             'total_sales_revenue' => 'decimal:2',
             'total_purchase_cost' => 'decimal:2',
             'total_material_cost' => 'decimal:2',
+            'total_fleet_cost' => 'decimal:2',
             'budgeted_revenue' => 'decimal:2',
             'budgeted_labor_cost' => 'decimal:2',
             'budgeted_material_cost' => 'decimal:2',
@@ -50,7 +51,7 @@ class Chantiers extends Model
 
     public function getTotalRealCostAttribute(): float
     {
-        return $this->total_labor_cost + $this->total_material_cost + $this->total_rental_cost + $this->total_purchase_cost;
+        return $this->total_labor_cost + $this->total_material_cost + $this->total_rental_cost + $this->total_purchase_cost + $this->total_fleet_cost;
     }
 
     public function getTotalBudgetedCostAttribute(): float

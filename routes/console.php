@@ -97,3 +97,17 @@ Schedule::job(new \App\Jobs\Comptabilite\PostRecurringEntriesJob())
     ->onOneServer()
     ->withoutOverlapping()
     ->sendOutputTo(storage_path('logs/schedule/comptabilite-post-recurring-entries.log'));
+
+Schedule::command('locations:generate-invoices')
+    ->dailyAt('05:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/locations-generate-invoices.log'))
+    ->description("Génère automatiquement les factures fournisseurs pour les contrats de location actifs.");
+
+Schedule::job(new \App\Jobs\Fleets\AllocateFleetCostsJob())
+    ->dailyAt('23:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/fleet-allocate-costs.log'))
+    ->description("Impute les coûts journaliers des véhicules aux chantiers selon les assignations et pointages.");
