@@ -21,8 +21,9 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
     - **Automatisation (Calcul des Coûts)** : Le coût total de main-d'œuvre d'un chantier est mis à jour automatiquement. L'observer `app/Observers/RH/TimesheetObserver.php` écoute les événements `created`, `updated`, `deleted` du modèle `Timesheet`. À chaque événement, il déclenche le recalcul du coût total sur le modèle `Chantier` associé, **en prenant en compte les majorations pour les heures supplémentaires, de nuit et du dimanche**.
     - **Géocodage** : Une automatisation (probablement un observer sur le modèle `Chantier`) convertit l'adresse d'un chantier en coordonnées GPS lors de sa création ou modification.
     - **Coûts de Location** : Le modèle `Chantiers` inclut `total_rental_cost`, mis à jour automatiquement par l'observer `app/Observers/Locations/RentalContractObserver.php` lors des modifications des contrats de location liés.
+    - **Coûts de Flotte (TCO)** : Le modèle `Chantiers` inclut `total_fleet_cost`. Le Job `app/Jobs/Fleets/AllocateFleetCostsJob.php` (planifié quotidiennement) impute le coût journalier des véhicules (`internal_daily_cost`) aux chantiers en croisant les assignations de flotte et les pointages des employés.
     - **Suivi Budgétaire et Rentabilité** :
-        - Le modèle `Chantiers` inclut des champs pour les coûts réels (`total_labor_cost`, `total_material_cost`, `total_rental_cost`, `total_purchase_cost`) et budgétés (`budgeted_revenue`, `budgeted_labor_cost`, etc.).
+        - Le modèle `Chantiers` inclut des champs pour les coûts réels (`total_labor_cost`, `total_material_cost`, `total_rental_cost`, `total_purchase_cost`, `total_fleet_cost`) et budgétés (`budgeted_revenue`, `budgeted_labor_cost`, `budgeted_material_cost`, `budgeted_rental_cost`, `budgeted_purchase_cost`, `budgeted_fleet_cost`).
         - Des accesseurs (`getTotalRealCostAttribute`, `getRealMarginAttribute`, etc.) sont disponibles pour calculer en temps réel la marge et l'écart par rapport au budget.
         - La commande `app/Console/Commands/Chantiers/GenerateProfitabilityReportCommand.php` génère des rapports de rentabilité en PDF et CSV pour un ou plusieurs chantiers.
         - **Historisation** : Le modèle `app/Models/Chantiers/ChantierReport.php` stocke une référence à chaque rapport généré, assurant la traçabilité.
@@ -95,7 +96,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - Le Job `app/Jobs/Comptabilite/GenerateFecJob.php` est responsable de la génération du Fichier des Écritures Comptables (FEC).
         - Il utilise les relations `journal`, `account` et `tier` pour extraire les données.
         - Il remplit les champs `CompAuxNum` et `CompAuxLib` avec les informations du `Tiers` associé à l'écriture.
-        - Il assure une numérotation séquentielle et ininterrompue du champ `EcritureNum` par journal et par mois, pour une conformité totale avec la norme DGFIP.
+        - **Numérotation Séquentielle** : Le job implémente une logique stricte pour garantir que le champ `EcritureNum` est séquentiel et ininterrompu par journal et par exercice, en utilisant un compteur en mémoire et un tri précis (`journal_id`, `date`, `id`).
     - **Reporting Comptable** :
         - Le service `app/Services/Comptabilite/ComptaReportingService.php` fournit des méthodes pour récupérer les écritures par journal (`getJournalEntries`) ou par compte (`getGeneralLedgerEntries`), et calculer les soldes (`getAccountBalanceAtDate`).
         - **Génération de Rapports Automatisée** : La commande `app/Console/Commands/Comptabilite/GenerateAccountingReportsCommand.php` génère :
@@ -109,7 +110,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Gestion de la flotte de véhicules, des assurances, des consommations, des maintenances et des assignations.
 - **Implémentation Technique** :
-    - **Modèle Principal** : `app/Models/Fleets/Fleet.php` est enrichi avec des détails comme `name`, `registration_number`, `type` (via `app/Enums/Fleets/FleetType.php`), `brand`, `model`, `vin`, `mileage`.
+    - **Modèle Principal** : `app/Models/Fleets/Fleet.php` est enrichi avec des détails comme `name`, `registration_number`, `type` (via `app/Enums/Fleets/FleetType.php`), `brand`, `model`, `vin`, `mileage`, et `internal_daily_cost`.
     - **Synchronisation Ulys** : La commande `app/Console/Commands/Fleets/SyncUlysConsumptionsCommand.php` utilise le service `app/Services/Fleets/UlysService.php` pour récupérer les données de consommation de l'API Ulys et les stocker dans le modèle `app/Models/Fleets/UlysConsumption.php`. Le modèle `UlysConsumption` inclut un `status` (`Pending`, `Posted`) pour le suivi comptable.
     - **Gestion des Assurances** :
         - Le modèle `app/Models/Fleets/Insurance.php` est enrichi avec `contract_number`, `insurer_name`, `is_active`, et `notified_at`.
@@ -128,6 +129,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
             1.  L'observer `app/Observers/Fleets/FleetAssignmentObserver.php` envoie des notifications (`app/Notifications/Fleets/FleetAssignedNotification.php`) lors de la création, mise à jour ou suppression d'une assignation.
             2.  La commande `app/Console/Commands/Fleets/CheckFleetAssignmentRemindersCommand.php` vérifie quotidiennement les assignations dont la fin approche et envoie des rappels (`app/Notifications/Fleets/FleetAssignmentReminderNotification.php`) aux entités assignées. Cette commande est planifiée via `routes/console.php`.
         - Les modèles `app/Models/Fleets/Fleet`, `app/Models/RH/Employee` et `app/Models/RH/Team` ont des relations polymorphiques (`MorphMany`, `MorphToMany`) pour gérer ces assignations.
+    - **Imputation des Coûts** : Le Job `app/Jobs/Fleets/AllocateFleetCostsJob.php` impute quotidiennement le `internal_daily_cost` des véhicules aux chantiers correspondants.
 
 ---
 
@@ -136,11 +138,12 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Préparation, calcul et export des fiches de paie.
 - **Implémentation Technique** :
     - **Service de Calcul** : Le service `app/Services/Paie/PayrollCalculator.php` est le moteur principal. Il collecte les heures (`Timesheet`) et les frais (`Expense`) pour une période donnée, les agrège et crée des `PayrollVariable` pour un `PayrollSlip`. **Il inclut désormais la gestion des différents types d'heures majorées (supplémentaires, nuit, dimanche) pour le calcul.**
-    - **Variables de Paie** : L'Enum `app/Enums/Paie/PayrollVariableType.php` est utilisé pour standardiser les différents types d'éléments de paie.
+    - **Variables de Paie** : L'Enum `app/Enums/Paie/PayrollVariableType.php` est utilisé pour standardiser les différents types d'éléments de paie (incluant désormais `MealVoucher` et `Transport`).
     - **Structure** : Les modèles `PayrollPeriods`, `PayrollSlip`, et `PayrollVariable` forment la structure de base pour stocker les données de paie. Le modèle `PayrollSlip` implémente `HasMedia` et inclut un champ `processed_at`.
     - **Export de Paie** :
         - Le service `app/Services/Paie/PayrollExportService.php` génère un fichier CSV à partir des `PayrollVariable` d'un `PayrollSlip`.
         - **Configuration Flexible** : Utilise `config/payroll.php` pour définir les formats d'export.
+        - **Configuration par Compagnie** : Le modèle `Company` inclut `payroll_export_format` et `payroll_external_reference_id` pour personnaliser l'export par client.
         - **Mapping des Codes** : Supporte un mapping configurable (`code_mapping`) pour traduire les types internes (`PayrollVariableType`) vers les codes spécifiques des logiciels de paie (Silae, Sage).
         - Le Job `app/Jobs/Paie/GeneratePayrollExportJob.php` orchestre le calcul via `PayrollCalculator` et l'export via `PayrollExportService`, puis attache le CSV au `PayrollSlip` via Spatie Media Library. **Il marque également les notes de frais comme remboursées après le traitement du bulletin de paie.**
 
@@ -148,9 +151,9 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 ### Module : GPAO
 
-- **Description Fonctionnelle** : Gestion des Ordres de Fabrication (OF) et de la nomenclature (recettes).
+- **Description Fonctionnelle** : Gestion des Ordres de Fabrication (OF), de la nomenclature (recettes) et des besoins en matériaux.
 - **Implémentation Technique** :
-    - **Nomenclature** : La gestion des "recettes" (assemblages de produits) est en place.
+    - **Nomenclature** : La gestion des "recettes" est gérée par le modèle `app/Models/Articles/ProductAssembly.php`.
     - **Ordres de Fabrication** :
         - **Modèle Principal** : `app/Models/GPAO/ProductionOrder.php` pour gérer les ordres de fabrication, **incluant les champs de planification (`assigned_to`, `planned_start_date`, `planned_end_date`) et de suivi (`actual_start_date`, `actual_end_date`)**.
         - **Statuts** : `app/Enums/GPAO/ProductionOrderStatus.php` pour suivre l'état de l'OF (Brouillon, Planifié, En cours, Terminé, Annulé).
@@ -160,6 +163,9 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - **Automatisation (Alertes de retard)** : La commande `app/Console/Commands/GPAO/CheckProductionOrderDelaysCommand.php` vérifie quotidiennement les OF en retard et envoie des alertes. Cette commande est planifiée via `routes/console.php`.
         - **Calcul du Coût de Main-d'Œuvre** : L'observer `app/Observers/RH/TimesheetObserver.php` recalcule le `total_labor_cost` de l'OF à chaque modification d'un pointage lié.
         - **Calcul du Coût des Matériaux** : L'observer `app/Observers/GPAO/ProductionOrderObserver.php` calcule le `total_material_cost` de l'OF lorsque celui-ci est terminé.
+    - **Calcul des Besoins et Suggestions d'Achat (MRP Simplifié)** :
+        - Le service `app/Services/GPAO/MaterialRequirementService.php` calcule les déficits en matériaux en comparant les besoins des OF (`Planned` et `InProgress`) avec le stock disponible.
+        - La commande `app/Console/Commands/GPAO/GeneratePurchaseSuggestionsCommand.php` utilise ce service pour générer automatiquement des brouillons de commandes fournisseurs (`PurchaseDocument`) pour les produits manquants, en se basant sur le fournisseur principal (`main_supplier_id`) du produit.
 
 ---
 
@@ -168,10 +174,11 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Gestion des contrats de location de matériel.
 - **Implémentation Technique** :
     - **Structure** :
-        - **Modèles** : `app/Models/Locations/RentalContract.php` (avec `periodicity`, `deposit_amount`) et `app/Models/Locations/RentalContractLine.php`.
+        - **Modèles** : `app/Models/Locations/RentalContract.php` (avec `periodicity`, `deposit_amount`, `next_billing_date`) et `app/Models/Locations/RentalContractLine.php`.
         - **Statuts** : `app/Enums/Locations/RentalContractStatus.php`.
     - **Automatisation (Calcul des Totaux)** : L'observer `app/Observers/Locations/RentalContractLineObserver.php` recalcule les totaux du contrat (`total_ht`, `total_ttc`) à chaque modification d'une ligne.
     - **Automatisation (Comptabilisation)** : L'observer `app/Observers/Locations/RentalContractObserver.php` déclenche le service `app/Services/Comptabilite/RentalContractComptaService.php` lorsque le statut du contrat passe à `Completed`. Ce service génère un `PurchaseDocument` (Facture Fournisseur).
+    - **Automatisation (Facturation Fournisseur)** : La commande `app/Console/Commands/Locations/GenerateRentalSupplierInvoicesCommand.php` génère automatiquement les factures fournisseurs (`PurchaseDocument`) pour les contrats actifs selon leur périodicité.
     - **Intégration Coûts Chantiers** : L'observer `app/Observers/Locations/RentalContractObserver.php` met à jour le `total_rental_cost` sur le `Chantier` associé lors des modifications du contrat.
     - **Alertes** : La commande `app/Console/Commands/Locations/CheckRentalExpirationsCommand.php` notifie les admins des contrats arrivant à échéance.
 
@@ -182,7 +189,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 - **Description Fonctionnelle** : Gestion et suivi des interventions de maintenance sur les sites ou chantiers.
 - **Implémentation Technique** :
     - **Structure** :
-        - **Modèles** : `app/Models/Interventions/Intervention.php` (avec `billing_type` : Forfait/Régie) et `app/Models/Interventions/InterventionProduct.php` (pivot).
+        - **Modèles** : `app/Models/Interventions/Intervention.php` (avec `billing_type`, `target_margin_rate`, `actual_margin`) et `app/Models/Interventions/InterventionProduct.php` (pivot).
         - **Statuts** : `app/Enums/Interventions/InterventionStatus.php`.
     - **Automatisation (Calcul des Coûts)** :
         - **Main-d'œuvre** : L'observer `app/Observers/RH/TimesheetObserver.php` recalcule le `total_labor_cost` de l'intervention à chaque modification d'un pointage lié.
@@ -190,7 +197,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
         - **Déstockage Intelligent** : `InterventionProductObserver` cherche le stock dans le dépôt par défaut de l'entreprise (`Warehouse::where('is_default', true)`).
     - **Automatisation (Notifications)** : L'observer `app/Observers/Interventions/InterventionObserver.php` envoie des notifications (`app/Notifications/Interventions/InterventionNotification.php`) lors de la création ou du changement de statut.
     - **Automatisation (Comptabilisation)** : L'observer `app/Observers/Interventions/InterventionObserver.php` déclenche le service `app/Services/Comptabilite/InterventionComptaService.php` lorsque le statut passe à `Completed`. Ce service génère des écritures analytiques (Coûts MO/Matériaux) avec lien vers le Tiers et référence de pièce.
-    - **Automatisation (Facturation)** : L'observer `app/Observers/Interventions/InterventionObserver.php` déclenche la méthode `generateSalesDocument()` du modèle `Intervention` lorsque le statut passe à `Completed` et que l'intervention est facturable. Cette méthode gère la facturation au forfait ou en régie.
+    - **Automatisation (Facturation)** : L'observer `app/Observers/Interventions/InterventionObserver.php` déclenche la méthode `generateSalesDocument()` du modèle `Intervention` lorsque le statut passe à `Completed` et que l'intervention est facturable. Cette méthode gère la facturation au forfait ou en régie, en appliquant la marge cible.
 
 ---
 
@@ -198,8 +205,20 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 - **Description Fonctionnelle** : Visualisation 3D des projets.
 - **Implémentation Technique** :
-    - **Coordonnées GPS** : La gestion des coordonnées GPS est prête.
-    - **Intégration Viewer BIM/IFC** : L'intégration d'un visualiseur BIM/IFC est à faire.
+    - **Structure** : Le modèle `app/Models/Chantiers/ProjectModel.php` permet de lier des maquettes numériques (IFC, GLB...) à un chantier. Il inclut des champs pour le calage manuel (`model_origin_latitude`, `rotation_z`, etc.) et utilise Spatie Media Library pour le stockage des fichiers.
+    - **Intégration Viewer BIM/IFC** : L'intégration d'un visualiseur est à faire.
+
+---
+
+### Module : Pilotage / Reporting
+
+- **Description Fonctionnelle** : Centralisation des calculs de KPI pour les tableaux de bord.
+- **Implémentation Technique** :
+    - **Service Principal** : `app/Services/Reporting/DashboardService.php`.
+    - **Méthodes Clés** :
+        - `getChantiersRentability()`: Calcule le top/flop des chantiers par marge.
+        - `getFinancialAlerts()`: Agrège les créances en retard et les dettes à venir.
+        - `getFleetUtilization()`: Calcule le taux d'utilisation de la flotte sur 30 jours.
 
 ---
 
@@ -257,6 +276,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Flottes/Assignation | app/Notifications/Fleets/FleetAssignmentReminderNotification.php | Notification de rappel de fin d'assignation de flotte. |
 | Flottes/Assignation | app/Console/Commands/Fleets/CheckFleetAssignmentRemindersCommand.php | Commande de vérification et d'envoi des rappels de fin d'assignation de flotte. Planifiée via `routes/console.php`. |
 | Flottes/Structure | database/migrations/2025_12_11...create_maintenances_table.php | Stocke les informations de suivi et coût des entretiens. |
+| Flottes/Imputation | app/Jobs/Fleets/AllocateFleetCostsJob.php | Job d'imputation des coûts journaliers des véhicules aux chantiers. |
 | NDF/Structure | database/migrations/2025_12_12...add_reimbursement_fields_to_expenses_table.php | Ajout des champs de remboursement aux notes de frais. |
 | Compta/Structure | database/migrations/2025_12_12...add_tier_id_to_compta_entries_table.php | Ajout du champ `tier_id` aux écritures comptables. |
 | Core/Scheduling | routes/console.php | Fichier de planification des commandes Artisan (Laravel 12+). |
@@ -271,11 +291,14 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | GPAO/OF | database/migrations/2024_01_01_000002_add_production_order_id_to_timesheets_table.php | Migration pour lier les pointages aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000003_add_total_labor_cost_to_production_orders_table.php | Migration pour ajouter le coût de la main-d'œuvre aux ordres de fabrication. |
 | GPAO/OF | database/migrations/2024_01_01_000004_add_sales_document_line_id_to_production_orders_table.php | Migration pour lier les ordres de fabrication aux lignes de commande client. |
+| GPAO/MRP | app/Services/GPAO/MaterialRequirementService.php | Service de calcul des besoins en matériaux (MRP simplifié). |
+| GPAO/MRP | app/Console/Commands/GPAO/GeneratePurchaseSuggestionsCommand.php | Commande de génération des suggestions d'achats. |
 | Locations/Base | app/Models/Locations/RentalContract.php | Modèle principal des contrats de location. |
 | Locations/Base | app/Models/Locations/RentalContractLine.php | Modèle pour les lignes de contrat de location. |
 | Locations/Automation | app/Observers/Locations/RentalContractLineObserver.php | Recalcule les totaux du contrat à chaque modification d'une ligne. |
 | Locations/Automation | app/Observers/Locations/RentalContractObserver.php | Déclenche la comptabilisation du contrat. |
 | Locations/Compta | app/Services/Comptabilite/RentalContractComptaService.php | Service de comptabilisation des contrats de location. |
+| Locations/Automation | app/Console/Commands/Locations/GenerateRentalSupplierInvoicesCommand.php | Commande de génération automatique des factures fournisseurs. |
 | GPAO/OF | database/migrations/2025_12_12_270000_add_total_material_cost_to_production_orders_table.php | Migration pour ajouter le coût des matériaux aux ordres de fabrication. |
 | Interventions/Base | app/Models/Interventions/Intervention.php | Modèle principal des interventions. |
 | Interventions/Base | app/Models/Interventions/InterventionProduct.php | Modèle pivot pour les produits utilisés dans une intervention. |
@@ -285,3 +308,6 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 | Interventions/Notifications | app/Notifications/Interventions/InterventionNotification.php | Notification pour les interventions. |
 | Chantiers/Reporting | app/Models/Chantiers/ChantierReport.php | Modèle pour historiser les rapports de rentabilité. |
 | Chantiers/Reporting | database/migrations/2025_12_12_330000_create_chantier_reports_table.php | Migration pour la table d'historisation des rapports. |
+| Pilotage/Reporting | app/Services/Reporting/DashboardService.php | Service de centralisation des calculs de KPI. |
+| 3D/Structure | app/Models/Chantiers/ProjectModel.php | Modèle pour lier les maquettes 3D aux chantiers. |
+| 3D/Structure | database/migrations/2025_12_26_200000_create_project_models_table.php | Migration pour la table des maquettes 3D. |

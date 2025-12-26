@@ -22,8 +22,7 @@ class GeneratePayrollExportJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        public PayrollSlip $slip,
-        public PayrollExportFormat $format = PayrollExportFormat::GenericCSV // Ajout du paramètre de format
+        public PayrollSlip $slip
     ) {
         //
     }
@@ -34,12 +33,15 @@ class GeneratePayrollExportJob implements ShouldQueue
     public function handle(PayrollCalculator $calculator, PayrollExportService $exportService): void
     {
         try {
+            // 0. Récupérer le format depuis la configuration de l'entreprise
+            $format = $this->slip->company->payroll_export_format ?? PayrollExportFormat::GenericCSV;
+
             // 1. Calculer (ou recalculer) le bulletin de paie
             $calculator->calculate($this->slip);
 
             // 2. Générer le contenu du fichier CSV en utilisant le format spécifié
-            $csvContent = $exportService->generateCsv($this->slip, $this->format);
-            $fileName = $exportService->generateFileName($this->slip, $this->format); // Passer le format au nom de fichier
+            $csvContent = $exportService->generateCsv($this->slip, $format);
+            $fileName = $exportService->generateFileName($this->slip, $format); // Passer le format au nom de fichier
 
             // 3. Attacher le fichier CSV au bulletin de paie en utilisant Spatie Media Library
             $this->slip->addMediaFromString($csvContent)
@@ -62,10 +64,11 @@ class GeneratePayrollExportJob implements ShouldQueue
                     }
                 });
 
-            Log::info("Export de paie généré avec succès pour le bulletin #{$this->slip->id} au format {$this->format->value}.");
+            Log::info("Export de paie généré avec succès pour le bulletin #{$this->slip->id} au format {$format->value}.");
 
         } catch (\Throwable $e) {
-            Log::error("Erreur lors de la génération de l'export de paie pour le bulletin #{$this->slip->id} au format {$this->format->value}: " . $e->getMessage());
+            $formatValue = isset($format) ? $format->value : 'unknown';
+            Log::error("Erreur lors de la génération de l'export de paie pour le bulletin #{$this->slip->id} au format {$formatValue}: " . $e->getMessage());
             // Gérer l'échec du job
             $this->fail($e);
         }

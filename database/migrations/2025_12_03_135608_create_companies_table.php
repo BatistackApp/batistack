@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->string('name');
             $table->string('email')->unique();
             $table->string('tax_number')->nullable();
+            $table->string('siren')->nullable();
 
             // Gestion de l'abonnement principal (Formule 1, 2 ou 3)
             // On stocke l'identifiant du plan (ex: 'plan_starter', 'plan_pro')

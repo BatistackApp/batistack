@@ -15,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
+/**
+ * @property float $internal_daily_cost Coût journalier interne du véhicule pour imputation analytique
+ */
 class Fleet extends Model implements HasMedia
 {
     use HasFactory, BelongsToCompany, InteractsWithMedia;
@@ -64,6 +67,7 @@ class Fleet extends Model implements HasMedia
             'last_check_date' => 'date',
             'type' => FleetType::class,
             'mileage' => 'integer',
+            'internal_daily_cost' => 'decimal:2',
         ];
     }
 }

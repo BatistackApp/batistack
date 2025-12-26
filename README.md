@@ -6,39 +6,29 @@ L'architecture est pensée pour être multi-tenant, permettant à chaque entrepr
 
 ## ✨ Fonctionnalités Clés
 
-Le projet s'articule autour de plusieurs modules métiers, certains étant déjà stables et d'autres en cours de développement.
+Le projet s'articule autour de plusieurs modules métiers, dont la quasi-totalité est désormais fonctionnelle.
 
-### Modules Stables
+### Modules Terminés
 
 - **CRM (Tiers)** : Gestion des clients, fournisseurs et sous-traitants.
-- **Chantiers** : Suivi des projets, incluant la gestion des coûts de main-d'œuvre, des coûts de location, des revenus et des coûts d'achat, avec suivi budgétaire et génération de rapports de rentabilité (PDF/CSV).
+- **Chantiers** : Suivi des projets, incluant la gestion complète des coûts (main-d'œuvre, location, achats, flotte) et le suivi budgétaire.
 - **Articles & Stock** : Gestion du catalogue d'articles, des ouvrages (recettes) et du stock multi-dépôts.
 - **Commerce & Facturation** : Création de devis, factures, acomptes et suivi des paiements.
 - **Banque** : Gestion des comptes, synchronisation des transactions (via BridgeAPI) et rapprochement bancaire automatisé.
 - **Pointage & RH** : Saisie des heures des employés et calcul du coût de la main-d'œuvre par chantier.
-- **Notes de Frais** : Gestion des dépenses des employés avec un workflow de validation et une **comptabilisation automatique** après validation.
+- **Notes de Frais** : Gestion des dépenses des employés avec un workflow de validation et une **comptabilisation automatique**.
 - **GED** : Gestion électronique des documents avec gestion de métadonnées et alertes d'expiration.
+- **Comptabilité** : Comptabilisation automatique de toutes les opérations, génération du FEC et reporting complet.
+- **Paie** : Calcul des fiches de paie et génération d'exports CSV configurables (Silae, Sage, Generic).
+- **Flottes** : Gestion complète du parc véhicules, incluant les assurances, maintenances, et l'**imputation analytique des coûts aux chantiers**.
+- **GPAO** : Gestion des ordres de fabrication, planification, suivi de production et suggestions d'achats (MRP).
+- **Locations** : Gestion des contrats de location fournisseurs avec **génération automatique des factures**.
+- **Interventions** : Gestion des interventions avec suivi des coûts, facturation à la marge et comptabilisation.
+- **Pilotage (KPI)** : Un service backend centralise les calculs de performance (rentabilité, alertes financières, taux d'utilisation).
 
-### Modules en Cours de Développement
+### Modules en Cours
 
-- **Comptabilité** :
-    - **Avancé** : Comptabilisation automatique des NDF, consommations Ulys, **factures de vente, factures fournisseurs et contrats de location**.
-    - **Avancé** : Génération du Fichier des Écritures Comptables (FEC) avec gestion des tiers et numérotation séquentielle conforme.
-    - **Avancé** : Reporting des journaux et Grand Livre, avec **génération automatique de rapports CSV**.
-- **Paie** :
-    - **Avancé** : Calcul des fiches de paie (agrégation heures/frais), **incluant les notes de frais remboursables et la gestion des heures majorées**.
-    - **Avancé** : Génération d'exports CSV avec support de différents formats (Silae, Sage, générique), **prêt pour l'intégration des spécifications exactes**.
-- **Flottes** :
-    - **Avancé** : Gestion détaillée des véhicules (immatriculation, type, marque, modèle, VIN, kilométrage).
-    - **Avancé** : Gestion des assurances avec alertes d'expiration.
-    - **Avancé** : Gestion des maintenances avec alertes d'échéance.
-    - **Avancé** : Assignation des véhicules aux employés ou équipes, **avec suivi de statut et rappels de fin d'assignation**.
-- **GPAO** :
-    - **Avancé** : Gestion des ordres de fabrication, **incluant la création automatique à partir des commandes clients**, la planification, le suivi de statut, la mise à jour des stocks, le calcul du coût de la main-d'œuvre et des matériaux, et les notifications d'assignation et de retard.
-- **Locations** :
-    - **En cours** : Gestion des contrats de location (fournisseurs), avec calcul des totaux et comptabilisation automatique.
-- **Interventions** :
-    - **En cours** : Gestion des interventions, avec suivi des coûts (main-d'œuvre, matériaux), comptabilisation et génération de factures.
+- **3D Vision** : La structure backend est prête pour la gestion des maquettes 3D (IFC/BIM). L'intégration d'un viewer est la prochaine étape.
 
 ## 🚀 Stack Technique
 

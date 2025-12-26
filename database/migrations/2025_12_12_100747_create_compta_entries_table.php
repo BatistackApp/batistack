@@ -29,7 +29,7 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->index(['company_id', 'date']);
-            $table->index(['journal_id', 'reference']);
+            $table->index(['compta_journal_id', 'reference']);
         });
     }
 

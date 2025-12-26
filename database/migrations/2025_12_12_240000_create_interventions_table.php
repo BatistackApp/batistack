@@ -26,6 +26,7 @@ return new class extends Migration
             $table->date('actual_start_date')->nullable();
             $table->date('actual_end_date')->nullable();
             $table->text('report')->nullable();
+            $table->decimal('total_material_cost', 15, 2)->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

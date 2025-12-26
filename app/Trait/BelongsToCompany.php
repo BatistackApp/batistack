@@ -34,4 +34,17 @@ trait BelongsToCompany
     {
         return $this->belongsTo(Company::class);
     }
+
+    /**
+     * Scope local pour filtrer par une compagnie spécifique.
+     *
+     * @param Builder $query
+     * @param Company|int $company
+     * @return Builder
+     */
+    public function scopeForCompany(Builder $query, Company|int $company): Builder
+    {
+        $companyId = $company instanceof Company ? $company->id : $company;
+        return $query->where('company_id', $companyId);
+    }
 }

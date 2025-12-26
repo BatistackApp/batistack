@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('production_orders', function (Blueprint $table) {
-            $table->decimal('total_material_cost', 15, 2)->default(0)->after('total_labor_cost');
+        Schema::table('chantiers', function (Blueprint $table) {
+            $table->decimal('total_fleet_cost', 12, 2)->default(0)->comment('Coût total imputé des véhicules assignés');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('production_orders', function (Blueprint $table) {
-            $table->dropColumn('total_material_cost');
+        Schema::table('chantiers', function (Blueprint $table) {
+            $table->dropColumn('total_fleet_cost');
         });
     }
 };

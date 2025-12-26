@@ -7,6 +7,7 @@ use App\Models\Fleets\FleetAssignment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Team extends Model
@@ -23,6 +24,11 @@ class Team extends Model
     public function leader(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'leader_id');
+    }
+
+    public function employees(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class, 'employee_team');
     }
 
     public function fleetAssignments(): MorphMany

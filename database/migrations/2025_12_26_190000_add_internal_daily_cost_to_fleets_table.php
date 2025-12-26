@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\Fleets\FleetType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,9 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('fleets', function (Blueprint $table) {
-            $table->string('registration_number')->nullable()->unique()->after('name');
-            $table->string('vin')->nullable()->unique()->after('model');
-            $table->unsignedInteger('mileage')->default(0)->after('vin');
+            $table->decimal('internal_daily_cost', 10, 2)->default(0)->comment('Coût journalier interne du véhicule pour imputation analytique');
         });
     }
 
@@ -25,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('fleets', function (Blueprint $table) {
-            $table->dropColumn(['name', 'registration_number', 'type', 'brand', 'model', 'vin', 'mileage']);
+            $table->dropColumn('internal_daily_cost');
         });
     }
 };

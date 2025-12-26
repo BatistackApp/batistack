@@ -67,6 +67,8 @@ return [
                 'absence' => '900',        // Absences
                 'bonus' => '500',          // Primes génériques (à affiner selon le code variable)
                 'expense' => '600',        // Remboursement de frais
+                'meal_voucher' => '700',   // Titres restaurant
+                'transport' => '750',      // Indemnité transport
             ],
         ],
 
@@ -94,6 +96,8 @@ return [
                 'absence' => 'ABS',
                 'bonus' => 'PRIME',
                 'expense' => 'NDF',
+                'meal_voucher' => 'TR',
+                'transport' => 'TRANS',
             ],
         ],
 

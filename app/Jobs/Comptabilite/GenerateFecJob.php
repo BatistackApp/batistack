@@ -57,6 +57,7 @@ class GenerateFecJob implements ShouldQueue
         }
 
         // Initialisation des compteurs pour EcritureNum
+        // On utilise un tableau associatif pour stocker le dernier numéro utilisé par journal et par mois
         $entryCounters = [];
 
         ComptaEntry::query()
@@ -65,12 +66,16 @@ class GenerateFecJob implements ShouldQueue
             ->with(['journal', 'account', 'tier'])
             ->orderBy('journal_id') // Tri par journal d'abord
             ->orderBy('date')      // Puis par date
+            ->orderBy('id')        // Enfin par ID pour garantir un ordre déterministe
             ->chunk(500, function ($entries) use ($csv, &$entryCounters) {
                 foreach ($entries as $entry) {
                     // Génération de la clé pour le compteur (JournalCode-Année-Mois)
-                    $counterKey = $entry->journal->code . '-' . $entry->date->format('Y-m');
+                    // La norme FEC exige une numérotation continue par journal.
+                    // Souvent réinitialisée par exercice ou par mois selon les logiciels.
+                    // Ici, nous optons pour une numérotation continue sur l'exercice par journal.
+                    $counterKey = $entry->journal->code;
 
-                    // Initialisation du compteur si c'est la première fois qu'on le rencontre
+                    // Initialisation du compteur si c'est la première fois qu'on le rencontre pour ce journal
                     if (!isset($entryCounters[$counterKey])) {
                         $entryCounters[$counterKey] = 1;
                     }
