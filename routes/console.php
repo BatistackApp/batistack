@@ -118,3 +118,10 @@ Schedule::job(new \App\Jobs\Fleets\AllocateFleetCostsJob())
     ->withoutOverlapping()
     ->sendOutputTo(storage_path('logs/schedule/fleet-allocate-costs.log'))
     ->description("Impute les coûts journaliers des véhicules aux chantiers selon les assignations et pointages.");
+
+Schedule::command('subscription:check-trials')
+    ->dailyAt('08:30')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/subscription-check-trials.log'))
+    ->description("Vérifie les périodes d'essai des abonnements.");
