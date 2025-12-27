@@ -22,3 +22,42 @@
 }
 
 @variant dark (&:where(.dark, .dark *));
+
+:root {
+    --ovh-blue: #004494;
+    --ovh-light-blue: #0070f3;
+    --ovh-dark: #122844;
+}
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+.bg-ovh-blue { background-color: var(--ovh-blue); }
+.text-ovh-blue { color: var(--ovh-blue); }
+.hover-ovh:hover { color: var(--ovh-light-blue); }
+
+.hero-gradient {
+    background: linear-gradient(135deg, #004494 0%, #002d62 100%);
+}
+
+.card-shadow {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #e5e7eb;
+}
+.card-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    border-color: var(--ovh-light-blue);
+}
+
+.mega-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    background: white;
+    z-index: 50;
+    border-bottom: 3px solid var(--ovh-blue);
+    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+}
+.nav-item:hover .mega-menu { display: block; }
