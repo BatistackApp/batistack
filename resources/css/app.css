@@ -34,6 +34,7 @@ body {
 }
 .bg-ovh-blue { background-color: var(--ovh-blue); }
 .text-ovh-blue { color: var(--ovh-blue); }
+.text-ovh-dark { color: var(--ovh-dark); }
 .hover-ovh:hover { color: var(--ovh-light-blue); }
 
 .hero-gradient {

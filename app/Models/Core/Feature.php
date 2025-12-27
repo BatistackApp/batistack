@@ -2,6 +2,7 @@
 
 namespace App\Models\Core;
 
+use App\Enums\Core\TypeFeature;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -15,6 +16,7 @@ class Feature extends Model
     {
         return [
             'is_optional' => 'boolean',
+            'type' => TypeFeature::class,
         ];
     }
 

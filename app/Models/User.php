@@ -58,4 +58,9 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Company::class);
     }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role == UserRole::SUPERADMIN;
+    }
 }
