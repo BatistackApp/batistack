@@ -19,8 +19,14 @@
         @vite('resources/css/app.css')
     </head>
 
-    <body class="antialiased">
-        {{ $slot }}
+    <body class="bg-gray-50 font-sans antialiased">
+        <x-site.header />
+
+        <main>
+            {{ $slot }}
+        </main>
+
+        <x-site.footer />
 
         @livewire('notifications')
 

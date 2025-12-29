@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[ObservedBy([CompanyObserver::class])]
 class Company extends Model
@@ -29,19 +30,34 @@ class Company extends Model
         return $this->hasMany(User::class);
     }
 
-    public function features(): HasMany
+    public function subscriptions(): HasMany
     {
-        return $this->hasMany(CompanyFeature::class);
+        return $this->hasMany(Subscription::class);
     }
 
-    // Helper pour vérifier rapidement si une option est active
-    public function hasFeature(string $code): bool
+    public function activeSubscription(): HasOne
     {
-        return $this->features()
-            ->where('feature_code', $code)
-            ->where(function($query) {
-                $query->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
+        return $this->hasOne(Subscription::class)->where('status', 'active');
+    }
+
+    /**
+     * Vérifie si l'entreprise a accès à une fonctionnalité via son abonnement.
+     *
+     * @param string $featureCode Le code de la fonctionnalité (ex: "module_gpao")
+     * @return bool
+     */
+    public function hasFeature(string $featureCode): bool
+    {
+        $subscription = $this->activeSubscription;
+
+        if (!$subscription) {
+            return false;
+        }
+
+        // On vérifie si la feature est dans les items de l'abonnement
+        return $subscription->items()
+            ->whereHasMorph('subscribable', [Feature::class], function ($query) use ($featureCode) {
+                $query->where('code', $featureCode);
             })
             ->exists();
     }
