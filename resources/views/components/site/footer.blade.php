@@ -3,7 +3,7 @@
         <div class="col-span-2">
             <div class="text-2xl font-bold text-ovh-blue mb-4">BuildCore</div>
             <p class="text-sm text-gray-500 mb-6 max-w-xs">
-                Solution ERP SaaS éditée par BuildTech France. <br>
+                Solution ERP SaaS éditée par Vortech Studio. <br>
                 Propulsé par Laravel 12 & Filament PHP.
             </p>
             <div class="flex space-x-4">
