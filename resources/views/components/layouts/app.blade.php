@@ -14,6 +14,7 @@
                 display: none !important;
             }
         </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 
         @filamentStyles
         @vite('resources/css/app.css')
@@ -30,6 +31,7 @@
 
         @livewire('notifications')
 
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/js/all.min.js" />
         @filamentScripts
         @vite('resources/js/app.js')
     </body>

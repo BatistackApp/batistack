@@ -11,7 +11,7 @@
         <div class="flex items-center justify-between h-20">
             <div class="flex items-center space-x-10">
                 <div class="text-3xl font-bold text-ovh-blue flex items-center">
-                    <i class="fas fa-hard-hat mr-2"></i>BuildCore
+                    <i class="fas fa-hard-hat mr-2"></i>{{ config('app.name') }}
                 </div>
 
                 <div class="hidden lg:flex space-x-8">

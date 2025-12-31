@@ -22,5 +22,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@batistack.com',
             'role' => 'superadmin',
         ]);
+
+        if (config('app.env') == 'local') {
+            $this->call(TestSeeder::class);
+        }
     }
 }
