@@ -72,6 +72,11 @@ class ProductionOrder extends Model
         return $this->hasMany(Timesheet::class);
     }
 
+    public function qualityControls(): HasMany
+    {
+        return $this->hasMany(QualityControl::class);
+    }
+
     // Méthode pour vérifier si l'OF est verrouillé (non modifiable)
     public function isLocked(): bool
     {

@@ -24,7 +24,7 @@ Ce document centralise les pistes d'amélioration et les refactorisations potent
 
 *   **Suivi Budgétaire** :
     *   **[FAIT]** Ajouter des alertes automatiques lorsque le coût réel dépasse un certain pourcentage du budget (ex: 80%, 100%). *Implémenté via `CheckChantierBudgetsCommand` et `BudgetAlertNotification`.*
-    *   Permettre la révision budgétaire avec historisation des versions.
+    *   **[FAIT]** Permettre la révision budgétaire avec historisation des versions. *Implémenté via `ChantierBudgetVersion` et `createBudgetSnapshot`.*
 *   **Planification** :
     *   Intégrer une vue Gantt pour la planification des chantiers et des ressources.
 
@@ -34,15 +34,15 @@ Ce document centralise les pistes d'amélioration et les refactorisations potent
     *   Intégrer une API de tracking GPS en temps réel pour les véhicules.
     *   Calculer automatiquement les kilomètres parcourus pour les comparer aux relevés manuels.
 *   **Analyse TCO** :
-    *   Affiner le calcul du TCO (Total Cost of Ownership) en incluant la dépréciation du véhicule.
+    *   **[FAIT]** Affiner le calcul du TCO (Total Cost of Ownership) en incluant la dépréciation du véhicule. *Implémenté dans `DepreciateFleetValueJob`.*
 
 ## 5. Module GPAO
 
 *   **Planification de Production** :
-    *   Ajouter un algorithme d'ordonnancement automatique des OF en fonction de la charge des ressources.
+    *   **[FAIT]** Ajouter un algorithme d'ordonnancement automatique des OF en fonction de la charge des ressources. *Implémenté via `ProductionPlanningService` et `manufacturing_duration`.*
     *   Gérer les contraintes de capacité des machines/postes de travail.
 *   **Qualité** :
-    *   Ajouter un module de contrôle qualité à différentes étapes de la production.
+    *   **[FAIT]** Ajouter un module de contrôle qualité à différentes étapes de la production. *Implémenté via `QualityCheckpoint` et blocage dans `ProductionOrderObserver`.*
 
 ## 6. Module 3D Vision
 
@@ -53,7 +53,7 @@ Ce document centralise les pistes d'amélioration et les refactorisations potent
 ## 7. Architecture Globale
 
 *   **Performance** :
-    *   Mettre en place du caching (Redis) pour les requêtes lourdes (ex: calculs de rentabilité, tableaux de bord).
+    *   **[FAIT]** Mettre en place du caching (Redis) pour les requêtes lourdes (ex: calculs de rentabilité, tableaux de bord). *Implémenté dans `DashboardService`.*
     *   Optimiser les requêtes Eloquent (Eager Loading) pour éviter le problème N+1.
 *   **Tests** :
     *   Augmenter la couverture de tests unitaires et fonctionnels (Pest/PHPUnit), notamment sur les calculs critiques (Paie, Compta).
