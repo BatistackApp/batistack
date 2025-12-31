@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Trait\BelongsToCompany;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Filament\Notifications\Notification;
 
@@ -12,7 +14,11 @@ class CheckQuota
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  string  $featureCode  The feature code to check (e.g., 'limit_users')
+     * @param  string|null  $modelClass  The model class to count usage against. MUST use App\Trait\BelongsToCompany.
+     * @return \Symfony\Component\HttpFoundation\Response
      */
     public function handle(Request $request, Closure $next, string $featureCode, string $modelClass = null): Response
     {
@@ -24,16 +30,24 @@ class CheckQuota
 
         // Calcul de l'usage actuel
         $currentUsage = 0;
-        if ($modelClass && class_exists($modelClass)) {
-            // Si un modèle est fourni, on compte le nombre d'enregistrements pour cette compagnie
-            // On suppose que le modèle a un scope ou une relation company, ou utilise le trait BelongsToCompany
-            // Mais attention, BelongsToCompany applique un global scope.
-            // Donc Model::count() retournera le count pour la company courante.
+
+        if ($modelClass) {
+            if (!class_exists($modelClass)) {
+                Log::error("CheckQuota Middleware: Model class '{$modelClass}' not found.");
+                abort(500, "Server Configuration Error: Invalid model for quota check.");
+            }
+
+            // Runtime Validation: Ensure the model enforces tenant scoping
+            // We check if the model uses the BelongsToCompany trait to ensure Model::count() is scoped.
+            $traits = class_uses_recursive($modelClass);
+
+            if (!in_array(BelongsToCompany::class, $traits)) {
+                Log::critical("CheckQuota Middleware Security Alert: Model '{$modelClass}' does not use BelongsToCompany trait. Automatic counting aborted to prevent data leak.");
+                abort(500, "Server Configuration Error: Model does not support tenant scoping.");
+            }
+
+            // Safe to count: The global scope from the trait will apply
             $currentUsage = $modelClass::count();
-        } else {
-            // Si pas de modèle, on ne peut pas calculer l'usage automatiquement ici.
-            // Ce middleware est donc surtout utile pour les cas simples (Count de modèles).
-            // Pour des cas plus complexes, il faudra passer l'usage ou utiliser une autre méthode.
         }
 
         if (!$company->checkQuota($featureCode, $currentUsage)) {
@@ -45,10 +59,6 @@ class CheckQuota
                     ->body("Vous avez atteint la limite autorisée pour votre abonnement ({$featureCode}).")
                     ->danger()
                     ->send();
-
-                 // On peut arrêter là ou laisser continuer (mais l'action échouera probablement si on bloque au niveau controller)
-                 // Pour un middleware bloquant :
-                 abort(403, "Quota atteint pour {$featureCode}");
             }
 
             abort(403, "Quota atteint pour {$featureCode}");
