@@ -4,6 +4,7 @@ Ce document offre une vue d'ensemble de l'état de chaque module, de sa priorit�
 
 | Module | État d'Avancement | Priorité | Description Fonctionnelle |
 |---|---|---|---|
+| **Core / SaaS** | **Terminé** | Haute | Gestion des entreprises (Tenants), des abonnements (Plans) et des fonctionnalités activables (Modules, Options, Services). |
 | **Tiers (CRM)** | Stable | Basse | Gestion des clients, fournisseurs et sous-traitants. |
 | **Chantiers** | Stable | Basse | Suivi des projets, incluant la gestion des coûts (main-d'œuvre, location, achats), le suivi budgétaire et la génération de rapports de rentabilité (PDF/CSV). **Intègre désormais le coût des véhicules (TCO).** |
 | **Articles & Stock** | Stable | Basse | Gestion du catalogue d'articles, des ouvrages (recettes) et du stock multi-dépôts. |
