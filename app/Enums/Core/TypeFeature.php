@@ -10,6 +10,7 @@ enum TypeFeature: string implements HasLabel
     case MODULE = "module";
     case OPTION = "option";
     case SERVICE = "service";
+    case LIMIT = "limit";
 
     public function getLabel(): string|Htmlable|null
     {
@@ -17,6 +18,7 @@ enum TypeFeature: string implements HasLabel
             self::MODULE => "Module",
             self::OPTION => "Option",
             self::SERVICE => "Service",
+            self::LIMIT => "Limite / Quota",
         };
     }
 }

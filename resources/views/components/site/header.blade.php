@@ -15,44 +15,8 @@
                 </div>
 
                 <div class="hidden lg:flex space-x-8">
-                    <div class="nav-item group py-7 cursor-pointer border-b-2 border-transparent hover:border-ovh-blue">
-                        <span class="font-medium text-ovh-dark uppercase text-sm tracking-wider">Nos Solutions</span>
-                        <div class="mega-menu p-8">
-                            <div class="container mx-auto grid grid-cols-4 gap-8">
-                                <div>
-                                    <h3 class="font-bold text-ovh-blue mb-4 uppercase text-xs tracking-widest">Gestion Chantier</h3>
-                                    <ul class="space-y-2 text-sm">
-                                        <li class="hover:text-ovh-blue"><a href="#">Planning & Ressources</a></li>
-                                        <li class="hover:text-ovh-blue"><a href="#">Suivi de consommation</a></li>
-                                        <li class="hover:text-ovh-blue"><a href="#">Rapports d'intervention</a></li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-ovh-blue mb-4 uppercase text-xs tracking-widest">Finance & Devis</h3>
-                                    <ul class="space-y-2 text-sm">
-                                        <li class="hover:text-ovh-blue"><a href="#">Devis & Facturation</a></li>
-                                        <li class="hover:text-ovh-blue"><a href="#">Calcul de rentabilité</a></li>
-                                        <li class="hover:text-ovh-blue"><a href="#">Paiements Chorus Pro</a></li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <h3 class="font-bold text-ovh-blue mb-4 uppercase text-xs tracking-widest">Ressources Humaines</h3>
-                                    <ul class="space-y-2 text-sm">
-                                        <li class="hover:text-ovh-blue"><a href="#">Pointage Mobile</a></li>
-                                        <li class="hover:text-ovh-blue"><a href="#">Gestion des EPI</a></li>
-                                        <li class="hover:text-ovh-blue"><a href="#">Notes de frais</a></li>
-                                    </ul>
-                                </div>
-                                <div class="bg-blue-50 p-4 rounded">
-                                    <h3 class="font-bold text-ovh-blue mb-2">Nouveauté : Module BIM</h3>
-                                    <p class="text-xs text-gray-600 mb-4">Intégrez vos maquettes 3D directement dans votre suivi de chantier.</p>
-                                    <a href="#" class="text-sm font-bold text-ovh-blue hover:underline">En savoir plus →</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <a href="#" class="font-medium text-ovh-dark uppercase text-sm tracking-wider py-7 border-b-2 border-transparent hover:border-ovh-blue">Nos Solutions</a>
                     <a href="#" class="font-medium text-ovh-dark uppercase text-sm tracking-wider py-7 border-b-2 border-transparent hover:border-ovh-blue">Tarifs</a>
-                    <a href="#" class="font-medium text-ovh-dark uppercase text-sm tracking-wider py-7 border-b-2 border-transparent hover:border-ovh-blue">Écosystème</a>
                 </div>
             </div>
 

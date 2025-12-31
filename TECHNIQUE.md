@@ -4,6 +4,23 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 ---
 
+### Module : Core / SaaS
+
+- **Description Fonctionnelle** : Gestion des entreprises (Tenants), des abonnements (Plans) et des fonctionnalités activables.
+- **Implémentation Technique** :
+    - **Modèles** :
+        - `app/Models/Core/Company.php` : Représente un tenant.
+        - `app/Models/Core/Feature.php` : Représente une fonctionnalité activable (Module, Option, Service).
+        - `app/Models/Core/Plan.php` : Représente un niveau d'abonnement.
+    - **Enums** :
+        - `app/Enums/Core/TypeFeature.php` : Définit les types de fonctionnalités (`MODULE`, `OPTION`, `SERVICE`).
+        - `app/Enums/UserRole.php` : Définit les rôles utilisateurs (`SUPERADMIN`, `ADMINISTRATEUR`, `CLIENT`, `FOURNISSEUR`, `SALARIE`, `COMPTABILITE`).
+    - **Administration** :
+        - `app/Filament/Resources/Core/Features/FeatureResource.php` : Gestion CRUD des fonctionnalités.
+        - `app/Filament/Resources/Core/Companies/CompanyResource.php` : Gestion CRUD des entreprises.
+
+---
+
 ### Module : Pointage / RH
 
 - **Description Fonctionnelle** : Saisie des heures des employés et calcul du coût de la main-d'œuvre pour les chantiers.
@@ -176,7 +193,7 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
     - **Structure** :
         - **Modèles** : `app/Models/Locations/RentalContract.php` (avec `periodicity`, `deposit_amount`, `next_billing_date`) et `app/Models/Locations/RentalContractLine.php`.
         - **Statuts** : `app/Enums/Locations/RentalContractStatus.php`.
-    - **Automatisation (Calcul des Totaux)** : L'observer `app/Observers/Locations/RentalContractLineObserver.php` recalcule les totaux du contrat (`total_ht`, `total_ttc`) à chaque modification d'une ligne.
+    - **Automatisation (Calcul des Totaux)** : L'observer `app/Observers/Locations/RentalContractLineObserver.php` recalcule les totaux du contrat à chaque modification d'une ligne.
     - **Automatisation (Comptabilisation)** : L'observer `app/Observers/Locations/RentalContractObserver.php` déclenche le service `app/Services/Comptabilite/RentalContractComptaService.php` lorsque le statut du contrat passe à `Completed`. Ce service génère un `PurchaseDocument` (Facture Fournisseur).
     - **Automatisation (Facturation Fournisseur)** : La commande `app/Console/Commands/Locations/GenerateRentalSupplierInvoicesCommand.php` génère automatiquement les factures fournisseurs (`PurchaseDocument`) pour les contrats actifs selon leur périodicité.
     - **Intégration Coûts Chantiers** : L'observer `app/Observers/Locations/RentalContractObserver.php` met à jour le `total_rental_cost` sur le `Chantier` associé lors des modifications du contrat.
@@ -226,6 +243,9 @@ Ce document détaille l'implémentation technique et les mécanismes internes de
 
 | Catégorie | Fichier | Rôle / Utilisation |
 |---|---|---|
+| Core/SaaS | app/Models/Core/Feature.php | Modèle des fonctionnalités activables (Module, Option, Service). |
+| Core/SaaS | app/Enums/Core/TypeFeature.php | Enum des types de fonctionnalités. |
+| Core/SaaS | app/Enums/UserRole.php | Enum des rôles utilisateurs (SuperAdmin, Admin, Salarié...). |
 | RH/Pointage | app/Models/RH/Timesheet.php | Modèle central du pointage, calcule le cost du travail. |
 | RH/Automation | app/Observers/RH/TimesheetObserver.php | Logique métier/règles, déclenche le recalcul du coût chantier après chaque modification d'heure. |
 | Compta/NDF | app/Services/Comptabilite/ExpenseComptaService.php | Service de comptabilisation des notes de frais, inclut `tier_id`. |

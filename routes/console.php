@@ -8,6 +8,13 @@ Schedule::command('chantiers:check-delay')
     ->dailyAt('00:00')
     ->description("Vérifie les chantiers dont la date de fin prévue est dépassée");
 
+Schedule::command('chantiers:check-budgets')
+    ->dailyAt('07:00')
+    ->onOneServer()
+    ->withoutOverlapping()
+    ->sendOutputTo(storage_path('logs/schedule/chantiers-check-budgets.log'))
+    ->description("Vérifie la consommation budgétaire des chantiers et envoie des alertes.");
+
 Schedule::command('inventory:check-alert')
     ->dailyAt('08:00')
     ->description("Vérifie les stocks inférieurs au seuil d'alerte");

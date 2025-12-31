@@ -10,6 +10,7 @@ Le projet s'articule autour de plusieurs modules métiers, dont la quasi-totalit
 
 ### Modules Terminés
 
+- **Core / SaaS** : Gestion centralisée des entreprises (Tenants), des abonnements et des fonctionnalités activables (Modules, Options, Services).
 - **CRM (Tiers)** : Gestion des clients, fournisseurs et sous-traitants.
 - **Chantiers** : Suivi des projets, incluant la gestion complète des coûts (main-d'œuvre, location, achats, flotte) et le suivi budgétaire.
 - **Articles & Stock** : Gestion du catalogue d'articles, des ouvrages (recettes) et du stock multi-dépôts.

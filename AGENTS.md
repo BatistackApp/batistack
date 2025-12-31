@@ -36,6 +36,7 @@ A. MODULES TERMINÉS / STABLES (Production)
 | Interventions | Gestion des interventions (Forfait ou Régie). **Déstockage intelligent (Dépôt par défaut), facturation client avec marge configurable et suivi de rentabilité, comptabilisation analytique des coûts.** | |
 | Locations | Gestion des contrats fournisseurs. **Support de la périodicité, alertes d'expiration et génération automatique des factures fournisseurs.** | |
 | Pilotage | Service de calcul des KPI (Rentabilité chantiers, Alertes financières, Taux d'utilisation flotte). | `app/Services/Reporting/DashboardService.php` |
+| **Core / SaaS** | Gestion des entreprises, des abonnements (Plans) et des fonctionnalités (Features). | `app/Models/Core/Feature.php`, `app/Enums/Core/TypeFeature.php` |
 
 B. MODULES EN COURS (Focus Actuel)
 
@@ -52,6 +53,9 @@ C. MODULES À FAIRE (Priorités Futures)
 
 | Catégorie | Fichier | Rôle / Utilisation |
 |---|---|---|
+| Core/SaaS | app/Models/Core/Feature.php | Modèle des fonctionnalités activables (Module, Option, Service). |
+| Core/SaaS | app/Enums/Core/TypeFeature.php | Enum des types de fonctionnalités. |
+| Core/SaaS | app/Enums/UserRole.php | Enum des rôles utilisateurs (SuperAdmin, Admin, Salarié...). |
 | RH/Pointage | app/Models/RH/Timesheet.php | Modèle central du pointage, calcule le cost du travail. |
 | RH/Automation | app/Observers/RH/TimesheetObserver.php | Logique métier/règles, déclenche le recalcul du coût chantier après chaque modification d'heure. |
 | Compta/NDF | app/Services/Comptabilite/ExpenseComptaService.php | Service de comptabilisation des notes de frais, inclut `tier_id`. |
@@ -140,13 +144,14 @@ C. MODULES À FAIRE (Priorités Futures)
 
 (Se référer à la section 1 de ce document pour la hiérarchie des permissions)
 
-| Rôle | Description |
-|---|---|
-| Direction / Administrateur | Accès complet, gestion des paramètres globaux. |
-| Conducteur / Chef d'équipe | Saisie primaire des données (ex: pointage, notes de frais). |
-| Gestionnaire de Chantier | Validation, suivi des coûts de projet. |
-| Gestionnaire Financier / Administratif | Facturation, rapprochement bancaire, gestion des dépenses. |
-| Gestionnaire de Flotte / Matériel | Gestion des véhicules, engins, maintenances, assurances. |
-| Responsable GPAO | Gestion des ordres de fabrication, planification, suivi de production. |
-| Opérateur de Production | Consultation des ordres de fabrication assignés, saisie des temps de production. |
-| Technicien | Consultation et suivi des interventions assignées. |
+| Rôle Fonctionnel | Rôle Technique (Enum) | Description |
+|---|---|---|
+| Super Admin | `SUPERADMIN` | Accès complet à la plateforme, gestion des tenants. |
+| Direction / Administrateur | `ADMINISTRATEUR` | Accès complet à l'entreprise (Tenant), gestion des paramètres globaux. |
+| Client | `CLIENT` | Accès limité au portail client (Devis, Factures, Interventions). |
+| Fournisseur | `FOURNISSEUR` | Accès limité au portail fournisseur (Appels d'offres, Commandes). |
+| Salarié / Conducteur | `SALARIE` | Saisie primaire des données (ex: pointage, notes de frais). |
+| Comptable | `COMPTABILITE` | Accès aux modules financiers et exports comptables. |
+| Gestionnaire de Chantier | - | Validation, suivi des coûts de projet. |
+| Gestionnaire de Flotte | - | Gestion des véhicules, engins, maintenances, assurances. |
+| Responsable GPAO | - | Gestion des ordres de fabrication, planification, suivi de production. |
