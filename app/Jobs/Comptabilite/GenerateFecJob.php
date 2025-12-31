@@ -38,15 +38,6 @@ class GenerateFecJob implements ShouldQueue
         // 1. Validation préalable
         $errors = $this->validateEntries();
         if (!empty($errors)) {
-            // On notifie l'utilisateur des erreurs et on arrête le job
-            // Supposons qu'on a une notification FecErrorNotification
-            // Si elle n'existe pas, je devrais la créer, mais pour l'instant je vais utiliser un log ou une notif générique si possible.
-            // Je vais supposer que je peux créer cette notification ou utiliser une méthode simple.
-            // Pour rester simple, je vais utiliser une notification Filament standard si possible, mais ici on est dans un Job.
-            // Je vais utiliser FecReadyNotification avec un flag d'erreur ou créer une nouvelle classe.
-            // Pour l'instant, je vais simuler l'envoi d'erreur via FecReadyNotification en changeant le message, ou mieux, créer la classe manquante.
-
-            // Je vais créer la notification d'erreur juste après.
              $this->requestingUser->notify(new FecErrorNotification($errors));
              return;
         }
