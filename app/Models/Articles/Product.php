@@ -62,6 +62,7 @@ class Product extends Model
             'vat_rate' => 'decimal:2',
             'is_stockable' => 'boolean',
             'is_active' => 'boolean',
+            'manufacturing_duration' => 'integer',
         ];
     }
 
