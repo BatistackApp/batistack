@@ -17,6 +17,10 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property float $internal_daily_cost Coût journalier interne du véhicule pour imputation analytique
+ * @property float $purchase_price
+ * @property float $residual_value
+ * @property int $depreciation_duration_years
+ * @property \Illuminate\Support\Carbon|null $purchase_date
  */
 class Fleet extends Model implements HasMedia
 {
@@ -68,6 +72,10 @@ class Fleet extends Model implements HasMedia
             'type' => FleetType::class,
             'mileage' => 'integer',
             'internal_daily_cost' => 'decimal:2',
+            'purchase_price' => 'decimal:2',
+            'residual_value' => 'decimal:2',
+            'current_value' => 'decimal:2',
+            'depreciation_duration_years' => 'integer',
         ];
     }
 }
