@@ -23,7 +23,7 @@ Ce document centralise les pistes d'amélioration et les refactorisations potent
 ## 3. Module Chantiers
 
 *   **Suivi Budgétaire** :
-    *   Ajouter des alertes automatiques lorsque le coût réel dépasse un certain pourcentage du budget (ex: 80%, 100%).
+    *   **[FAIT]** Ajouter des alertes automatiques lorsque le coût réel dépasse un certain pourcentage du budget (ex: 80%, 100%). *Implémenté via `CheckChantierBudgetsCommand` et `BudgetAlertNotification`.*
     *   Permettre la révision budgétaire avec historisation des versions.
 *   **Planification** :
     *   Intégrer une vue Gantt pour la planification des chantiers et des ressources.

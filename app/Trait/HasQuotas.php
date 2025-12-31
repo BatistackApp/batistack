@@ -40,7 +40,11 @@ trait HasQuotas
                 ->send();
 
             if ($abort) {
-                $this->halt(); // Pour Filament
+                if (method_exists($this, 'halt')) {
+                    $this->halt();
+                } else {
+                    abort(403, "Quota atteint pour {$featureCode}");
+                }
             }
 
             return false;
