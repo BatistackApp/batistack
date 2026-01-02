@@ -15,7 +15,7 @@
                 </div>
 
                 <div class="hidden lg:flex space-x-8">
-                    <a href="#" class="font-medium text-ovh-dark uppercase text-sm tracking-wider py-7 border-b-2 border-transparent hover:border-ovh-blue">Nos Solutions</a>
+                    <a href="{{ route('catalog') }}" class="font-medium text-ovh-dark uppercase text-sm tracking-wider py-7 border-b-2 border-transparent hover:border-ovh-blue">Nos Solutions</a>
                     <a href="#" class="font-medium text-ovh-dark uppercase text-sm tracking-wider py-7 border-b-2 border-transparent hover:border-ovh-blue">Tarifs</a>
                 </div>
             </div>

@@ -42,13 +42,21 @@ class Catalog extends Component
         }
     }
 
+    public function viewModule(int $featureId)
+    {
+        $this->redirect(route('module.show', ['feature' => $featureId]));
+    }
+
     public function render()
     {
         $features = Feature::query()
             ->when($this->search, function (Builder $query) {
-                $query->where('name', 'like', '%' . $this->search . '%')
-                    ->orWhere('description', 'like', '%' . $this->search . '%')
-                    ->orWhere('code', 'like', '%' . $this->search . '%');
+                // On groupe les conditions de recherche pour éviter les conflits avec les autres `where`
+                $query->where(function (Builder $subQuery) {
+                    $subQuery->where('name', 'like', '%' . $this->search . '%')
+                        ->orWhere('description', 'like', '%' . $this->search . '%')
+                        ->orWhere('code', 'like', '%' . $this->search . '%');
+                });
             })
             ->when($this->type, function (Builder $query) {
                 $query->where('type', $this->type);

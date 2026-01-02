@@ -14,6 +14,8 @@
 @source '../**/*.js';
 @source '../**/*.vue';
 
+@plugin "daisyui";
+
 @theme {
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
@@ -37,6 +39,8 @@ body {
 .text-ovh-blue { color: var(--ovh-blue); }
 .text-ovh-dark { color: var(--ovh-dark); }
 .hover-ovh:hover { color: var(--ovh-light-blue); }
+
+.btn-ovh { background-color: var(--ovh-blue); color: white; }
 
 .hero-gradient {
     background: linear-gradient(135deg, #004494 0%, #002d62 100%);
