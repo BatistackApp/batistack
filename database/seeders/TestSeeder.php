@@ -14,6 +14,7 @@ class TestSeeder extends Seeder
         $this->createFeature();
         $this->createPlan();
         $this->attachFeatureToPlan();
+        $this->createModulePlan();
     }
 
     private function createFeature(): void
@@ -253,5 +254,96 @@ class TestSeeder extends Seeder
         Plan::find(3)->features()->attach(Feature::find(9));
         Plan::find(3)->features()->attach(Feature::find(12));
         Plan::find(3)->features()->attach(Feature::find(10));
+    }
+
+    private function createModulePlan()
+    {
+        Plan::create([
+            "name" => "3D Vision",
+            "slug" => "3d-vision",
+            "description" => null,
+            "price_monthly" => 14.90,
+            "price_yearly" => 149.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(7));
+
+        Plan::create([
+            "name" => "Aggregation Bancaire",
+            "slug" => "aggregation-bancaire",
+            "description" => null,
+            "price_monthly" => 4.90,
+            "price_yearly" => 49.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(8));
+
+        Plan::create([
+            "name" => "Flotte",
+            "slug" => "flotte",
+            "description" => null,
+            "price_monthly" => 4.90,
+            "price_yearly" => 49.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(3));
+
+        Plan::create([
+            "name" => "GPAO",
+            "slug" => "gpao",
+            "description" => null,
+            "price_monthly" => 5.90,
+            "price_yearly" => 59.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(21));
+
+        Plan::create([
+            "name" => "Location",
+            "slug" => "location",
+            "description" => null,
+            "price_monthly" => 4.90,
+            "price_yearly" => 49.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(2));
+
+        Plan::create([
+            "name" => "Note de Frais",
+            "slug" => "note-de-frais",
+            "description" => null,
+            "price_monthly" => 2.90,
+            "price_yearly" => 9.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(1));
+
+        Plan::create([
+            "name" => "Paie",
+            "slug" => "paie",
+            "description" => null,
+            "price_monthly" => 14.90,
+            "price_yearly" => 149.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(11));
+
+        Plan::create([
+            "name" => "Signature",
+            "slug" => "signature",
+            "description" => null,
+            "price_monthly" => 9.90,
+            "price_yearly" => 99.90,
+            "is_active" => true,
+            "is_public" => false,
+            "sort_order" => 0,
+        ])->features()->attach(Feature::find(11));
     }
 }
