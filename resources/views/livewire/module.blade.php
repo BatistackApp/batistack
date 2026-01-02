@@ -10,7 +10,7 @@
                         @if(!$feature->is_optional)
                             <span class="text-ovh-blue font-medium">Disponible dans un plan par defaut</span>
                         @else
-                            <span class="text-ovh-blue font-medium">{{ Number::currency($feature->plans()->first()->price_monthly, 'EUR', 'fr') }} / par mois</span>
+                            <span class="text-ovh-blue font-medium">{{ $feature->plans->isNotEmpty() ? Number::currency($feature->plans->first()->price_monthly, 'EUR', 'fr') . ' / par mois' : 'Prix non disponible' }}</span>
                         @endif
                     </div>
                 </div>

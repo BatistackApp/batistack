@@ -1,7 +1,7 @@
 # Module GPAO - Note de Version
 
 **Version :** 1.2
-**Date :** 2024-05-21
+**Date :** 2025-01-02
 
 ---
 

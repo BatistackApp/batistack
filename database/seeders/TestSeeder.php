@@ -344,6 +344,6 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
-        ])->features()->attach(Feature::find(11));
+        ])->features()->attach(Feature::find(20));
     }
 }
