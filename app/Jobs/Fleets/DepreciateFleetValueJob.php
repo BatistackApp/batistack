@@ -14,41 +14,72 @@ class DepreciateFleetValueJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    // Durée de dépréciation en années
-    const DEPRECIATION_YEARS = 5;
-
     /**
      * Execute the job.
      */
     public function handle(): void
     {
-        Log::info("Début du calcul de la dépréciation de la flotte.");
+        Log::info("Début du calcul de la dépréciation et du TCO de la flotte.");
 
-        $fleetsToDepreciate = Fleet::whereNotNull('purchase_date')
+        $fleets = Fleet::whereNotNull('purchase_date')
             ->where('purchase_price', '>', 0)
+            ->with(['insurances', 'maintenances'])
             ->get();
 
-        foreach ($fleetsToDepreciate as $fleet) {
-            $purchaseDate = $fleet->purchase_date;
-            $purchasePrice = $fleet->purchase_price;
-            $monthsSincePurchase = $purchaseDate->diffInMonths(now());
-
-            // Si le véhicule a plus de 5 ans, sa valeur est 0
-            if ($monthsSincePurchase >= (self::DEPRECIATION_YEARS * 12)) {
-                $newValue = 0;
-            } else {
-                // Calcul de la dépréciation mensuelle
-                $monthlyDepreciation = $purchasePrice / (self::DEPRECIATION_YEARS * 12);
-                $totalDepreciation = $monthlyDepreciation * $monthsSincePurchase;
-                $newValue = $purchasePrice - $totalDepreciation;
-            }
-
-            // On s'assure que la valeur ne devient pas négative
-            $newValue = max(0, $newValue);
-
-            $fleet->update(['current_value' => $newValue]);
+        foreach ($fleets as $fleet) {
+            $this->processFleet($fleet);
         }
 
-        Log::info("Fin du calcul de la dépréciation. " . $fleetsToDepreciate->count() . " véhicules mis à jour.");
+        Log::info("Fin du calcul de la dépréciation. " . $fleets->count() . " véhicules mis à jour.");
+    }
+
+    protected function processFleet(Fleet $fleet): void
+    {
+        $purchaseDate = $fleet->purchase_date;
+        $purchasePrice = $fleet->purchase_price;
+        $residualValue = $fleet->residual_value ?? 0;
+        $durationYears = $fleet->depreciation_duration_years > 0 ? $fleet->depreciation_duration_years : 5;
+
+        // 1. Calcul de la Valeur Actuelle (Dépréciation Linéaire)
+        $monthsSincePurchase = $purchaseDate->diffInMonths(now());
+        $totalDepreciableAmount = $purchasePrice - $residualValue;
+        $monthlyDepreciation = $totalDepreciableAmount / ($durationYears * 12);
+
+        $totalDepreciation = $monthlyDepreciation * $monthsSincePurchase;
+        $newValue = $purchasePrice - $totalDepreciation;
+
+        // La valeur ne peut pas descendre en dessous de la valeur résiduelle
+        $newValue = max($residualValue, $newValue);
+
+        // 2. Calcul du TCO Journalier (Coût de revient)
+
+        // A. Coût de Dépréciation Journalier
+        $dailyDepreciation = $totalDepreciableAmount / ($durationYears * 365);
+
+        // B. Coût d'Assurance Journalier (Basé sur les contrats actifs)
+        $annualInsuranceCost = $fleet->insurances()
+            ->where('is_active', true)
+            ->sum('annual_cost');
+
+        $dailyInsurance = $annualInsuranceCost / 365;
+
+        // C. Coût de Maintenance Journalier (Moyenne sur les 12 derniers mois)
+        // On utilise 'cost' comme vérifié dans le modèle Maintenance
+        $lastYearMaintenanceCost = $fleet->maintenances()
+            ->where('date_maintenance', '>=', now()->subYear()) // Attention: le champ est date_maintenance
+            ->sum('cost');
+
+        $dailyMaintenance = $lastYearMaintenanceCost / 365;
+
+        // Total TCO Journalier
+        $internalDailyCost = $dailyDepreciation + $dailyInsurance + $dailyMaintenance;
+
+        // Mise à jour
+        $fleet->update([
+            'current_value' => round($newValue, 2),
+            'internal_daily_cost' => round($internalDailyCost, 2)
+        ]);
+
+        Log::debug("Fleet {$fleet->id}: Value={$newValue}, DailyCost={$internalDailyCost} (Depr:{$dailyDepreciation} + Ins:{$dailyInsurance} + Maint:{$dailyMaintenance})");
     }
 }

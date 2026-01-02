@@ -67,6 +67,11 @@ class ProductionOrderObserver
         if ($productionOrder->isDirty('status') && $productionOrder->status === ProductionOrderStatus::Completed && !$productionOrder->actual_end_date) {
             $productionOrder->actual_end_date = now();
         }
+
+        // **NOUVEAU: Vérification Qualité avant de passer à "Terminé"**
+        if ($productionOrder->isDirty('status') && $productionOrder->status === ProductionOrderStatus::Completed) {
+            $this->validateQualityControls($productionOrder);
+        }
     }
 
     /**
@@ -173,6 +178,37 @@ class ProductionOrderObserver
         }
         elseif (method_exists($assignedTo, 'notify')) {
             $assignedTo->notify(new ProductionOrderNotification($productionOrder, $type));
+        }
+    }
+
+    /**
+     * Valide que tous les contrôles qualité obligatoires sont passés.
+     *
+     * @throws Exception
+     */
+    private function validateQualityControls(ProductionOrder $productionOrder): void
+    {
+        $mandatoryCheckpoints = $productionOrder->product->qualityCheckpoints()->where('is_mandatory', true)->get();
+
+        if ($mandatoryCheckpoints->isEmpty()) {
+            return; // Pas de contrôle obligatoire
+        }
+
+        $passedControls = $productionOrder->qualityControls()
+            ->where('is_passed', true)
+            ->pluck('quality_checkpoint_id')
+            ->toArray();
+
+        $missingControls = [];
+        foreach ($mandatoryCheckpoints as $checkpoint) {
+            if (!in_array($checkpoint->id, $passedControls)) {
+                $missingControls[] = $checkpoint->label;
+            }
+        }
+
+        if (!empty($missingControls)) {
+            // On empêche la sauvegarde en lançant une exception
+            throw new Exception("Impossible de terminer l'OF. Les contrôles qualité obligatoires suivants sont manquants ou non validés : " . implode(', ', $missingControls));
         }
     }
 }

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -33,6 +34,11 @@ class Chantiers extends Model
     public function projectModels(): HasMany
     {
         return $this->hasMany(ProjectModel::class);
+    }
+
+    public function budgetVersions(): HasMany
+    {
+        return $this->hasMany(ChantierBudgetVersion::class)->orderByDesc('created_at');
     }
 
     protected function casts(): array
@@ -120,5 +126,27 @@ class Chantiers extends Model
             $this->address,
             $this->code_postal . ' ' . $this->ville
         ])->filter()->join(', ');
+    }
+
+    /**
+     * Crée un snapshot du budget actuel.
+     *
+     * @param string $versionName Nom de la version (ex: "Budget Initial")
+     * @param string|null $notes Notes optionnelles
+     * @return ChantierBudgetVersion
+     */
+    public function createBudgetSnapshot(string $versionName, ?string $notes = null): ChantierBudgetVersion
+    {
+        return $this->budgetVersions()->create([
+            'version_name' => $versionName,
+            'notes' => $notes,
+            'created_by' => Auth::id(),
+            'budgeted_revenue' => $this->budgeted_revenue,
+            'budgeted_labor_cost' => $this->budgeted_labor_cost,
+            'budgeted_material_cost' => $this->budgeted_material_cost,
+            'budgeted_rental_cost' => $this->budgeted_rental_cost,
+            'budgeted_purchase_cost' => $this->budgeted_purchase_cost,
+            'budgeted_fleet_cost' => $this->budgeted_fleet_cost,
+        ]);
     }
 }

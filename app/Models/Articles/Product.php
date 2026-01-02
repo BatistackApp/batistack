@@ -5,6 +5,7 @@ namespace App\Models\Articles;
 use App\Enums\Articles\ProductType;
 use App\Enums\Articles\ProductUnit;
 use App\Models\Core\Company;
+use App\Models\GPAO\QualityCheckpoint;
 use App\Models\Tiers\Tiers;
 use App\Observers\Articles\ProductObserver;
 use App\Trait\BelongsToCompany;
@@ -31,6 +32,11 @@ class Product extends Model
     public function stocks(): HasMany
     {
         return $this->hasMany(InventoryStock::class);
+    }
+
+    public function qualityCheckpoints(): HasMany
+    {
+        return $this->hasMany(QualityCheckpoint::class);
     }
 
     // Relation Ouvrage : Les composants (Enfants) de ce produit
@@ -62,6 +68,7 @@ class Product extends Model
             'vat_rate' => 'decimal:2',
             'is_stockable' => 'boolean',
             'is_active' => 'boolean',
+            'manufacturing_duration' => 'integer',
         ];
     }
 

@@ -10,6 +10,7 @@ use App\Models\Facturation\SalesDocument;
 use App\Models\GPAO\ProductionOrder;
 use App\Notifications\Facturation\InvoiceOverdueNotification;
 use App\Services\Comptabilite\SalesDocumentComptaService;
+use App\Services\GPAO\ProductionPlanningService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -146,6 +147,8 @@ class SalesDocumentObserver
      */
     private function createProductionOrdersFromQuote(SalesDocument $quote): void
     {
+        $planningService = new ProductionPlanningService();
+
         foreach ($quote->lines as $line) {
             // On ne traite que les produits de type "Ouvrage" (Assembly)
             if ($line->product->type === ProductType::Assembly) {
@@ -158,18 +161,19 @@ class SalesDocumentObserver
                     $missingQuantity = $quantityToProduce - $currentStock;
 
                     // Créer un Ordre de Fabrication pour la quantité manquante
-                    ProductionOrder::create([
+                    $order = ProductionOrder::create([
                         'company_id' => $quote->company_id,
                         'sales_document_line_id' => $line->id,
                         'product_id' => $product->id,
                         'quantity' => $missingQuantity,
-                        'status' => ProductionOrderStatus::Planned,
-                        'planned_start_date' => now(), // TODO: Améliorer la logique de planification
-                        'planned_end_date' => now()->addDays(7), // TODO: Améliorer la logique de planification
+                        'status' => ProductionOrderStatus::Draft, // On crée en brouillon d'abord
                         'notes' => "Généré automatiquement à partir du devis {$quote->reference}",
                     ]);
 
-                    Log::info("OF créé pour {$missingQuantity} de {$product->name} à partir du devis {$quote->reference}.");
+                    // Planification automatique
+                    $planningService->schedule($order);
+
+                    Log::info("OF créé et planifié pour {$missingQuantity} de {$product->name} à partir du devis {$quote->reference}.");
                 }
             }
         }
