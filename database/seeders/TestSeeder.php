@@ -199,6 +199,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => true,
             "sort_order" => 0,
+            'stripe_price_id' => 'price_1RzSkfCHG6zBQEsuMzL8Kt5E'
         ]);
 
         Plan::create([
@@ -210,6 +211,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => true,
             "sort_order" => 1,
+            'stripe_price_id' => 'price_1RzT1eCHG6zBQEsuaws9q3cI'
         ]);
 
         Plan::create([
@@ -221,6 +223,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => true,
             "sort_order" => 2,
+            'stripe_price_id' => 'price_1RzT2gCHG6zBQEsu08NwgaH5'
         ]);
     }
 
@@ -267,6 +270,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            'stripe_price_id' => 'price_1RzeE6CHG6zBQEsuNXDED22j'
         ])->features()->attach(Feature::find(7));
 
         Plan::create([
@@ -278,6 +282,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            "stripe_price_id" => "price_1Rze6VCHG6zBQEsuWKMbzYqX",
         ])->features()->attach(Feature::find(8));
 
         Plan::create([
@@ -289,6 +294,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            "stripe_price_id" => "price_1SKeL4CHG6zBQEsuzNH9T3gL",
         ])->features()->attach(Feature::find(3));
 
         Plan::create([
@@ -300,6 +306,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            "stripe_price_id" => "price_1RzTMGCHG6zBQEsuj5kRnJvZ",
         ])->features()->attach(Feature::find(21));
 
         Plan::create([
@@ -311,6 +318,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            "stripe_price_id" => "price_1SKeNFCHG6zBQEsuyzvAqNuB",
         ])->features()->attach(Feature::find(2));
 
         Plan::create([
@@ -322,6 +330,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            "stripe_price_id" => "price_1SLjmOCHG6zBQEsuMyGn6gbo",
         ])->features()->attach(Feature::find(1));
 
         Plan::create([
@@ -333,6 +342,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            "stripe_price_id" => "price_1RzdlcCHG6zBQEsukl3Snhya",
         ])->features()->attach(Feature::find(11));
 
         Plan::create([
@@ -344,6 +354,7 @@ class TestSeeder extends Seeder
             "is_active" => true,
             "is_public" => false,
             "sort_order" => 0,
+            "stripe_price_id" => "price_1RzTWaCHG6zBQEsuTyudg4Ug",
         ])->features()->attach(Feature::find(20));
     }
 }
