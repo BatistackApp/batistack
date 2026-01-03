@@ -10,11 +10,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Laravel\Cashier\Billable; // Import Cashier
 
 #[ObservedBy([CompanyObserver::class])]
 class Company extends Model
 {
-    use HasFactory;
+    use HasFactory, Billable; // Use Billable trait
+
     protected $guarded = [];
 
     protected function casts(): array
@@ -30,14 +32,26 @@ class Company extends Model
         return $this->hasMany(User::class);
     }
 
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(Subscription::class);
-    }
+    // Cashier gère sa propre table 'subscriptions', mais nous avons aussi notre modèle Subscription personnalisé.
+    // Pour éviter les conflits, nous devrons soit utiliser le modèle de Cashier, soit adapter le nôtre.
+    // Dans une architecture SaaS complexe, il est souvent préférable de laisser Cashier gérer la facturation pure
+    // et d'avoir une couche "SaaS" au-dessus.
+    // Pour l'instant, je garde la relation existante mais attention aux conflits de noms si Cashier utilise aussi 'subscriptions'.
+    // Cashier utilise par défaut le modèle \Laravel\Cashier\Subscription.
+
+    // Je vais renommer notre relation pour éviter l'ambiguïté si nécessaire, ou utiliser le modèle Cashier.
+    // Pour simplifier l'intégration Stripe, le mieux est d'utiliser le système de Cashier.
+
+    // public function subscriptions(): HasMany
+    // {
+    //    return $this->hasMany(Subscription::class);
+    // }
 
     public function activeSubscription(): HasOne
     {
-        return $this->hasOne(Subscription::class)->where('status', 'active');
+        // On utilise la logique Cashier pour récupérer l'abonnement actif
+        // 'default' est le nom par défaut de l'abonnement dans Cashier
+        return $this->subscription('default');
     }
 
     /**
@@ -48,18 +62,22 @@ class Company extends Model
      */
     public function hasFeature(string $featureCode): bool
     {
-        $subscription = $this->activeSubscription;
-
-        if (!$subscription) {
+        // Avec Cashier, on vérifie si l'abonnement est actif ('default')
+        if (!$this->subscribed('default')) {
             return false;
         }
 
-        // On vérifie si la feature est dans les items de l'abonnement
-        return $subscription->items()
-            ->whereHasMorph('subscribable', [Feature::class], function ($query) use ($featureCode) {
-                $query->where('code', $featureCode);
-            })
-            ->exists();
+        // Ensuite, on doit vérifier si le Plan Stripe associé contient la feature.
+        // Cela nécessite de lier le Plan local au Plan Stripe.
+        // On récupère le plan local via le stripe_price_id
+        $stripePriceId = $this->subscription('default')->stripe_price;
+        $localPlan = Plan::where('stripe_price_id', $stripePriceId)->first();
+
+        if (!$localPlan) {
+            return false;
+        }
+
+        return $localPlan->features()->where('code', $featureCode)->exists();
     }
 
     /**
@@ -71,33 +89,15 @@ class Company extends Model
      */
     public function getFeatureValue(string $featureCode, mixed $default = null): mixed
     {
-        $subscription = $this->activeSubscription;
-
-        if (!$subscription) {
+        if (!$this->subscribed('default')) {
             return $default;
         }
 
-        // On cherche l'item correspondant
-        $item = $subscription->items()
-            ->whereHasMorph('subscribable', [Feature::class], function ($query) use ($featureCode) {
-                $query->where('code', $featureCode);
-            })
-            ->first();
+        $stripePriceId = $this->subscription('default')->stripe_price;
+        $localPlan = Plan::where('stripe_price_id', $stripePriceId)->first();
 
-        // Si l'item existe, on retourne sa valeur (stockée dans quantity ou une colonne spécifique si on l'ajoute)
-        // Pour l'instant, supposons que la valeur est stockée dans 'quantity' de SubscriptionItem ou qu'on doit aller chercher la valeur du PlanFeature original si pas surchargé.
-        // Mais attendez, SubscriptionItem a 'quantity'.
-        // Si c'est une limite globale définie dans le Plan, elle est dans plan_feature.value.
-        // Si c'est une option ajoutée à l'abonnement, elle est dans subscription_items.quantity.
-
-        if ($item) {
-            return $item->quantity ?? $default;
-        }
-
-        // Si pas trouvé dans les items explicites, on regarde dans le plan de base
-        $plan = $subscription->plan;
-        if ($plan) {
-            $feature = $plan->features()->where('code', $featureCode)->first();
+        if ($localPlan) {
+            $feature = $localPlan->features()->where('code', $featureCode)->first();
             if ($feature && $feature->pivot->value !== null) {
                 return $feature->pivot->value;
             }

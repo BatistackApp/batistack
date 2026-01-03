@@ -25,4 +25,9 @@ class Plan extends Model
     {
         return $this->belongsToMany(Feature::class, 'plan_feature')->withPivot('value');
     }
+
+    public function getFeatureCountAttribute(): int
+    {
+        return $this->features->count();
+    }
 }
